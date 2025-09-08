@@ -1,5 +1,7 @@
-import { type Category, type InsertCategory, type ExpenseWallet, type InsertExpenseWallet, type UpdateExpenseWallet, type Expense, type InsertExpense, type UpdateExpense, type ExpenseWithCategory, type WalletSummary, type CategoryBreakdown, type ExpenseFilters, type ExpenseSortBy, type SortOrder } from "@shared/schema";
+import { type Category, type InsertCategory, type ExpenseWallet, type InsertExpenseWallet, type UpdateExpenseWallet, type Expense, type InsertExpense, type UpdateExpense, type ExpenseWithCategory, type WalletSummary, type CategoryBreakdown, type ExpenseFilters, type ExpenseSortBy, type SortOrder, categories, expenseWallets, expenses } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { db } from './db';
+import { eq, sql, desc, asc, and, gte, lte, like, isNotNull, count, sum } from 'drizzle-orm';
 
 export interface IStorage {
   // Category operations
@@ -31,127 +33,79 @@ export interface IStorage {
   getExpenseTrends(days: number): Promise<{ date: string; amount: number }[]>;
 }
 
-export class MemStorage implements IStorage {
-  private categories: Map<string, Category>;
-  private expenseWallets: Map<string, ExpenseWallet>;
-  private expenses: Map<string, Expense>;
-
-  constructor() {
-    this.categories = new Map();
-    this.expenseWallets = new Map();
-    this.expenses = new Map();
-    this.initializeDefaultData();
-  }
-
-  private initializeDefaultData() {
-    // Initialize default categories
-    const defaultCategories = [
-      { name: "Office Supplies", color: "#3b82f6", description: "Office materials, stationery, and supplies" },
-      { name: "Travel", color: "#10b981", description: "Business travel expenses" },
-      { name: "Meals & Entertainment", color: "#f59e0b", description: "Client meals and entertainment" },
-      { name: "Utilities", color: "#8b5cf6", description: "Office utilities and services" },
-      { name: "Other", color: "#6b7280", description: "Other business expenses" },
-    ];
-
-    defaultCategories.forEach(cat => {
-      const id = randomUUID();
-      this.categories.set(id, {
-        id,
-        ...cat,
-        isActive: 1,
-      });
-    });
-
-    // Initialize default expense wallet
-    const now = new Date();
-    const limitId = randomUUID();
-    this.expenseWallets.set(limitId, {
-      id: limitId,
-      amount: "10000.00",
-      description: "Initial wallet amount",
-      createdAt: now,
-      updatedAt: now,
-    });
-  }
+export class DatabaseStorage implements IStorage {
+  constructor() {}
 
   // Category operations
   async getCategories(): Promise<Category[]> {
-    return Array.from(this.categories.values()).filter(cat => cat.isActive === 1);
+    return await db.select().from(categories).where(eq(categories.isActive, 1));
   }
 
   async getCategoryById(id: string): Promise<Category | undefined> {
-    return this.categories.get(id);
+    const [category] = await db.select().from(categories).where(eq(categories.id, id));
+    return category || undefined;
   }
 
   async createCategory(category: InsertCategory): Promise<Category> {
-    const id = randomUUID();
-    const newCategory: Category = {
-      id,
-      ...category,
-      isActive: 1,
-    };
-    this.categories.set(id, newCategory);
+    const [newCategory] = await db
+      .insert(categories)
+      .values(category)
+      .returning();
     return newCategory;
   }
 
   async updateCategory(id: string, category: Partial<InsertCategory>): Promise<Category | undefined> {
-    const existing = this.categories.get(id);
-    if (!existing) return undefined;
-
-    const updated = { ...existing, ...category };
-    this.categories.set(id, updated);
-    return updated;
+    const [updated] = await db
+      .update(categories)
+      .set(category)
+      .where(eq(categories.id, id))
+      .returning();
+    return updated || undefined;
   }
 
   async deleteCategory(id: string): Promise<boolean> {
-    const category = this.categories.get(id);
-    if (!category) return false;
-
-    // Soft delete by setting isActive to 0
-    category.isActive = 0;
-    this.categories.set(id, category);
-    return true;
+    const [updated] = await db
+      .update(categories)
+      .set({ isActive: 0 })
+      .where(eq(categories.id, id))
+      .returning();
+    return !!updated;
   }
 
   // Expense Wallet operations
   async getExpenseWallets(): Promise<ExpenseWallet[]> {
-    return Array.from(this.expenseWallets.values());
+    return await db.select().from(expenseWallets).orderBy(desc(expenseWallets.createdAt));
   }
 
   async getCurrentExpenseWallet(): Promise<ExpenseWallet | undefined> {
-    const wallets = Array.from(this.expenseWallets.values());
-    // For simplified system, return the most recent one
-    return wallets.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())[0];
+    const [wallet] = await db
+      .select()
+      .from(expenseWallets)
+      .orderBy(desc(expenseWallets.updatedAt))
+      .limit(1);
+    return wallet || undefined;
   }
 
   async createExpenseWallet(wallet: InsertExpenseWallet): Promise<ExpenseWallet> {
-    const id = randomUUID();
-    const now = new Date();
-    const newWallet: ExpenseWallet = {
-      id,
-      ...wallet,
-      createdAt: now,
-      updatedAt: now,
-    };
-    this.expenseWallets.set(id, newWallet);
+    const [newWallet] = await db
+      .insert(expenseWallets)
+      .values(wallet)
+      .returning();
     return newWallet;
   }
 
   async updateExpenseWallet(id: string, wallet: Partial<InsertExpenseWallet>): Promise<ExpenseWallet | undefined> {
-    const existing = this.expenseWallets.get(id);
-    if (!existing) return undefined;
-
-    const updated = {
-      ...existing,
-      ...wallet,
-      updatedAt: new Date(),
-    };
-    this.expenseWallets.set(id, updated);
-    return updated;
+    const [updated] = await db
+      .update(expenseWallets)
+      .set({ ...wallet, updatedAt: new Date() })
+      .where(eq(expenseWallets.id, id))
+      .returning();
+    return updated || undefined;
   }
 
   async deleteExpenseWallet(id: string): Promise<boolean> {
-    return this.expenseWallets.delete(id);
+    const result = await db.delete(expenseWallets).where(eq(expenseWallets.id, id));
+    return result.rowCount > 0;
   }
 
   // Expense operations
@@ -162,139 +116,179 @@ export class MemStorage implements IStorage {
     limit = 50,
     offset = 0
   ): Promise<ExpenseWithCategory[]> {
-    let expenses = Array.from(this.expenses.values());
+    let query = db
+      .select({
+        id: expenses.id,
+        description: expenses.description,
+        amount: expenses.amount,
+        categoryId: expenses.categoryId,
+        vendor: expenses.vendor,
+        date: expenses.date,
+        receiptPath: expenses.receiptPath,
+        notes: expenses.notes,
+        createdAt: expenses.createdAt,
+        updatedAt: expenses.updatedAt,
+        category: {
+          id: categories.id,
+          name: categories.name,
+          color: categories.color,
+          description: categories.description,
+          isActive: categories.isActive,
+        },
+      })
+      .from(expenses)
+      .leftJoin(categories, eq(expenses.categoryId, categories.id));
 
     // Apply filters
+    const conditions = [];
     if (filters) {
       if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
-        expenses = expenses.filter(exp => 
-          exp.description.toLowerCase().includes(searchLower) ||
-          (exp.vendor && exp.vendor.toLowerCase().includes(searchLower))
+        conditions.push(
+          like(expenses.description, `%${filters.search}%`)
         );
       }
-
       if (filters.categoryId) {
-        expenses = expenses.filter(exp => exp.categoryId === filters.categoryId);
+        conditions.push(eq(expenses.categoryId, filters.categoryId));
       }
-
       if (filters.startDate) {
-        const startDate = new Date(filters.startDate);
-        expenses = expenses.filter(exp => new Date(exp.date) >= startDate);
+        conditions.push(gte(expenses.date, new Date(filters.startDate)));
       }
-
       if (filters.endDate) {
-        const endDate = new Date(filters.endDate);
-        expenses = expenses.filter(exp => new Date(exp.date) <= endDate);
+        conditions.push(lte(expenses.date, new Date(filters.endDate)));
       }
-
       if (filters.minAmount !== undefined) {
-        expenses = expenses.filter(exp => parseFloat(exp.amount) >= filters.minAmount!);
+        conditions.push(gte(expenses.amount, filters.minAmount.toString()));
       }
-
       if (filters.maxAmount !== undefined) {
-        expenses = expenses.filter(exp => parseFloat(exp.amount) <= filters.maxAmount!);
+        conditions.push(lte(expenses.amount, filters.maxAmount.toString()));
       }
     }
 
-    // Apply sorting
-    expenses.sort((a, b) => {
-      let aVal: any, bVal: any;
-      
-      switch (sortBy) {
-        case 'date':
-          aVal = new Date(a.date).getTime();
-          bVal = new Date(b.date).getTime();
-          break;
-        case 'amount':
-          aVal = parseFloat(a.amount);
-          bVal = parseFloat(b.amount);
-          break;
-        case 'description':
-          aVal = a.description.toLowerCase();
-          bVal = b.description.toLowerCase();
-          break;
-        case 'category':
-          const catA = this.categories.get(a.categoryId);
-          const catB = this.categories.get(b.categoryId);
-          aVal = catA?.name?.toLowerCase() || '';
-          bVal = catB?.name?.toLowerCase() || '';
-          break;
-        default:
-          return 0;
-      }
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
 
-      if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
-      if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
-      return 0;
-    });
+    // Apply sorting
+    const sortColumn = {
+      date: expenses.date,
+      amount: expenses.amount,
+      description: expenses.description,
+      category: categories.name,
+    }[sortBy];
+
+    const orderFn = sortOrder === 'asc' ? asc : desc;
+    query = query.orderBy(orderFn(sortColumn));
 
     // Apply pagination
-    const paginatedExpenses = expenses.slice(offset, offset + limit);
+    query = query.limit(limit).offset(offset);
 
-    // Enrich with category data
-    return paginatedExpenses.map(expense => ({
-      ...expense,
-      category: this.categories.get(expense.categoryId)!
-    }));
+    return await query;
   }
 
   async getExpenseById(id: string): Promise<ExpenseWithCategory | undefined> {
-    const expense = this.expenses.get(id);
-    if (!expense) return undefined;
-
-    const category = this.categories.get(expense.categoryId);
-    if (!category) return undefined;
-
-    return { ...expense, category };
+    const [expense] = await db
+      .select({
+        id: expenses.id,
+        description: expenses.description,
+        amount: expenses.amount,
+        categoryId: expenses.categoryId,
+        vendor: expenses.vendor,
+        date: expenses.date,
+        receiptPath: expenses.receiptPath,
+        notes: expenses.notes,
+        createdAt: expenses.createdAt,
+        updatedAt: expenses.updatedAt,
+        category: {
+          id: categories.id,
+          name: categories.name,
+          color: categories.color,
+          description: categories.description,
+          isActive: categories.isActive,
+        },
+      })
+      .from(expenses)
+      .leftJoin(categories, eq(expenses.categoryId, categories.id))
+      .where(eq(expenses.id, id));
+    return expense || undefined;
   }
 
   async createExpense(expense: InsertExpense): Promise<Expense> {
-    const id = randomUUID();
-    const now = new Date();
-    const newExpense: Expense = {
-      id,
-      ...expense,
-      createdAt: now,
-      updatedAt: now,
-    };
-    this.expenses.set(id, newExpense);
+    const [newExpense] = await db
+      .insert(expenses)
+      .values(expense)
+      .returning();
     return newExpense;
   }
 
   async updateExpense(id: string, expense: Partial<UpdateExpense>): Promise<Expense | undefined> {
-    const existing = this.expenses.get(id);
-    if (!existing) return undefined;
-
-    const updated = {
-      ...existing,
-      ...expense,
-      updatedAt: new Date(),
-    };
-    this.expenses.set(id, updated);
-    return updated;
+    const [updated] = await db
+      .update(expenses)
+      .set({ ...expense, updatedAt: new Date() })
+      .where(eq(expenses.id, id))
+      .returning();
+    return updated || undefined;
   }
 
   async deleteExpense(id: string): Promise<boolean> {
-    return this.expenses.delete(id);
+    const result = await db.delete(expenses).where(eq(expenses.id, id));
+    return result.rowCount > 0;
   }
 
   async getExpensesCount(filters?: ExpenseFilters): Promise<number> {
-    const expenses = await this.getExpenses(filters, 'date', 'desc', 999999, 0);
-    return expenses.length;
+    let query = db.select({ count: count() }).from(expenses);
+
+    // Apply same filters as getExpenses
+    const conditions = [];
+    if (filters) {
+      if (filters.search) {
+        conditions.push(like(expenses.description, `%${filters.search}%`));
+      }
+      if (filters.categoryId) {
+        conditions.push(eq(expenses.categoryId, filters.categoryId));
+      }
+      if (filters.startDate) {
+        conditions.push(gte(expenses.date, new Date(filters.startDate)));
+      }
+      if (filters.endDate) {
+        conditions.push(lte(expenses.date, new Date(filters.endDate)));
+      }
+      if (filters.minAmount !== undefined) {
+        conditions.push(gte(expenses.amount, filters.minAmount.toString()));
+      }
+      if (filters.maxAmount !== undefined) {
+        conditions.push(lte(expenses.amount, filters.maxAmount.toString()));
+      }
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+
+    const [result] = await query;
+    return result.count;
   }
 
   // Analytics operations
   async getWalletSummary(): Promise<WalletSummary> {
-    // Calculate total wallet amount from all wallet entries
-    const allWallets = Array.from(this.expenseWallets.values());
-    const walletAmount = allWallets.reduce((total, wallet) => total + parseFloat(wallet.amount), 0);
+    // Get total wallet amount from all wallet entries
+    const [walletResult] = await db
+      .select({ totalAmount: sum(expenseWallets.amount) })
+      .from(expenseWallets);
+    const walletAmount = parseFloat(walletResult.totalAmount || '0');
 
-    // Get all expenses
-    const allExpenses = Array.from(this.expenses.values());
-    const totalExpenses = allExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
+    // Get total expenses
+    const [expenseResult] = await db
+      .select({ totalAmount: sum(expenses.amount) })
+      .from(expenses);
+    const totalExpenses = parseFloat(expenseResult.totalAmount || '0');
+
+    // Get expense count
+    const [countResult] = await db
+      .select({ count: count() })
+      .from(expenses);
+    const expenseCount = countResult.count;
+
     const remainingAmount = walletAmount - totalExpenses;
-    const expenseCount = allExpenses.length;
     const averageExpense = expenseCount > 0 ? totalExpenses / expenseCount : 0;
     const percentageUsed = walletAmount > 0 ? (totalExpenses / walletAmount) * 100 : 0;
 
@@ -310,12 +304,16 @@ export class MemStorage implements IStorage {
 
   async getWalletSummaryForMonth(month: number, year: number): Promise<WalletSummary> {
     // Calculate total wallet balance from all wallet entries (like prepaid recharge)
-    const allWallets = Array.from(this.expenseWallets.values());
-    const totalWalletBalance = allWallets.reduce((total, wallet) => total + parseFloat(wallet.amount), 0);
+    const [walletResult] = await db
+      .select({ totalAmount: sum(expenseWallets.amount) })
+      .from(expenseWallets);
+    const totalWalletBalance = parseFloat(walletResult.totalAmount || '0');
 
     // Get ALL expenses ever made (to calculate remaining balance)
-    const allExpenses = Array.from(this.expenses.values());
-    const totalExpensesEver = allExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
+    const [allExpenseResult] = await db
+      .select({ totalAmount: sum(expenses.amount) })
+      .from(expenses);
+    const totalExpensesEver = parseFloat(allExpenseResult.totalAmount || '0');
     
     // Calculate available balance (like prepaid balance remaining)
     const availableBalance = totalWalletBalance - totalExpensesEver;
@@ -324,13 +322,19 @@ export class MemStorage implements IStorage {
     const startOfMonth = new Date(year, month - 1, 1);
     const endOfMonth = new Date(year, month, 0);
     
-    let monthlyExpenses = allExpenses.filter(exp => {
-      const expDate = new Date(exp.date);
-      return expDate >= startOfMonth && expDate <= endOfMonth;
-    });
+    const [monthlyExpenseResult] = await db
+      .select({ 
+        totalAmount: sum(expenses.amount),
+        count: count()
+      })
+      .from(expenses)
+      .where(and(
+        gte(expenses.date, startOfMonth),
+        lte(expenses.date, endOfMonth)
+      ));
 
-    const monthlyExpenseAmount = monthlyExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
-    const monthlyExpenseCount = monthlyExpenses.length;
+    const monthlyExpenseAmount = parseFloat(monthlyExpenseResult.totalAmount || '0');
+    const monthlyExpenseCount = monthlyExpenseResult.count;
     const monthlyAverageExpense = monthlyExpenseCount > 0 ? monthlyExpenseAmount / monthlyExpenseCount : 0;
     
     // Percentage used is monthly expenses vs total wallet balance
@@ -366,82 +370,77 @@ export class MemStorage implements IStorage {
   }
 
   async getCategoryBreakdown(month?: number, year?: number): Promise<CategoryBreakdown[]> {
-    let expenses = Array.from(this.expenses.values());
+    let query = db
+      .select({
+        id: categories.id,
+        name: categories.name,
+        color: categories.color,
+        description: categories.description,
+        isActive: categories.isActive,
+        totalAmount: sum(expenses.amount),
+        expenseCount: count(expenses.id),
+      })
+      .from(categories)
+      .leftJoin(expenses, eq(categories.id, expenses.categoryId))
+      .where(eq(categories.isActive, 1))
+      .groupBy(categories.id, categories.name, categories.color, categories.description, categories.isActive);
 
     // Filter by month/year if provided
     if (month && year) {
       const startOfMonth = new Date(year, month - 1, 1);
       const endOfMonth = new Date(year, month, 0);
       
-      expenses = expenses.filter(exp => {
-        const expDate = new Date(exp.date);
-        return expDate >= startOfMonth && expDate <= endOfMonth;
-      });
+      query = db
+        .select({
+          id: categories.id,
+          name: categories.name,
+          color: categories.color,
+          description: categories.description,
+          isActive: categories.isActive,
+          totalAmount: sum(expenses.amount),
+          expenseCount: count(expenses.id),
+        })
+        .from(categories)
+        .leftJoin(expenses, and(
+          eq(categories.id, expenses.categoryId),
+          gte(expenses.date, startOfMonth),
+          lte(expenses.date, endOfMonth)
+        ))
+        .where(eq(categories.isActive, 1))
+        .groupBy(categories.id, categories.name, categories.color, categories.description, categories.isActive);
     }
 
-    const totalAmount = expenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
+    const results = await query;
     
-    // Group by category
-    const categoryMap = new Map<string, { totalAmount: number; count: number }>();
+    // Calculate total amount for percentage calculation
+    const totalAmount = results.reduce((sum, cat) => sum + parseFloat(cat.totalAmount || '0'), 0);
     
-    expenses.forEach(expense => {
-      const existing = categoryMap.get(expense.categoryId) || { totalAmount: 0, count: 0 };
-      categoryMap.set(expense.categoryId, {
-        totalAmount: existing.totalAmount + parseFloat(expense.amount),
-        count: existing.count + 1,
-      });
-    });
-
-    // Build category breakdown
-    const breakdown: CategoryBreakdown[] = [];
-    
-    for (const [categoryId, data] of categoryMap.entries()) {
-      const category = this.categories.get(categoryId);
-      if (category) {
-        breakdown.push({
-          ...category,
-          totalAmount: data.totalAmount,
-          percentage: totalAmount > 0 ? (data.totalAmount / totalAmount) * 100 : 0,
-          expenseCount: data.count,
-        });
-      }
-    }
-
-    return breakdown.sort((a, b) => b.totalAmount - a.totalAmount);
+    return results.map(cat => ({
+      ...cat,
+      totalAmount: parseFloat(cat.totalAmount || '0'),
+      percentage: totalAmount > 0 ? (parseFloat(cat.totalAmount || '0') / totalAmount) * 100 : 0,
+    }));
   }
 
   async getExpenseTrends(days: number): Promise<{ date: string; amount: number }[]> {
-    const endDate = new Date();
     const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days + 1);
+    startDate.setDate(startDate.getDate() - days);
 
-    const expenses = Array.from(this.expenses.values()).filter(exp => {
-      const expDate = new Date(exp.date);
-      return expDate >= startDate && expDate <= endDate;
-    });
+    const results = await db
+      .select({
+        date: sql<string>`DATE(${expenses.date})`,
+        amount: sum(expenses.amount),
+      })
+      .from(expenses)
+      .where(gte(expenses.date, startDate))
+      .groupBy(sql`DATE(${expenses.date})`)
+      .orderBy(sql`DATE(${expenses.date})`);
 
-    // Group by date
-    const dateMap = new Map<string, number>();
-    
-    // Initialize all dates with 0
-    for (let i = 0; i < days; i++) {
-      const date = new Date(startDate);
-      date.setDate(date.getDate() + i);
-      const dateStr = date.toISOString().split('T')[0];
-      dateMap.set(dateStr, 0);
-    }
-
-    // Add actual expenses
-    expenses.forEach(expense => {
-      const dateStr = new Date(expense.date).toISOString().split('T')[0];
-      const existing = dateMap.get(dateStr) || 0;
-      dateMap.set(dateStr, existing + parseFloat(expense.amount));
-    });
-
-    return Array.from(dateMap.entries())
-      .map(([date, amount]) => ({ date, amount }))
-      .sort((a, b) => a.date.localeCompare(b.date));
+    return results.map(result => ({
+      date: result.date,
+      amount: parseFloat(result.amount || '0'),
+    }));
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
