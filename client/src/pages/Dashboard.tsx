@@ -4,17 +4,22 @@ import Sidebar from "@/components/Sidebar";
 import BudgetCards from "@/components/BudgetCards";
 import ExpenseCharts from "@/components/ExpenseCharts";
 import ExpenseTable from "@/components/ExpenseTable";
+import MonthYearSelector from "@/components/MonthYearSelector";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "wouter";
-import { Plus, Download, Tags, Calendar, Bell, User } from "lucide-react";
-import { MONTHS } from "@/lib/constants";
+import { Plus, Download, Tags, Bell, User, Calendar } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
 export default function Dashboard() {
   const currentDate = new Date();
-  const [selectedMonth] = useState(currentDate.getMonth() + 1);
-  const [selectedYear] = useState(currentDate.getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
+
+  const handleMonthYearChange = (month: number, year: number) => {
+    setSelectedMonth(month);
+    setSelectedYear(year);
+  };
 
   // Fetch budget summary for progress display
   const { data: budgetSummary } = useQuery({
@@ -54,11 +59,12 @@ export default function Dashboard() {
             </div>
             
             <div className="flex items-center space-x-4">
-              <div className="hidden md:flex items-center space-x-2 bg-accent px-3 py-2 rounded-lg">
-                <Calendar className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm font-medium" data-testid="text-current-month">
-                  {MONTHS[selectedMonth - 1]} {selectedYear}
-                </span>
+              <div className="hidden md:flex">
+                <MonthYearSelector
+                  selectedMonth={selectedMonth}
+                  selectedYear={selectedYear}
+                  onMonthYearChange={handleMonthYearChange}
+                />
               </div>
               <Button size="sm" variant="ghost" className="p-2">
                 <Bell className="w-4 h-4 text-muted-foreground" />
