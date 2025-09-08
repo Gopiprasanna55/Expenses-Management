@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertExpenseSchema, type InsertExpense } from "@shared/schema";
+import { insertExpenseSchema, type Category } from "@shared/schema";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -16,9 +16,20 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Upload } from "lucide-react";
 import type { UploadResult } from "@uppy/core";
 
+// Form input type (before schema transformation)
+type ExpenseFormData = {
+  description: string;
+  amount: string;
+  categoryId: string;
+  vendor?: string | null;
+  date: string; // Input as string, gets transformed to Date by schema
+  receiptPath?: string | null;
+  notes?: string | null;
+};
+
 interface ExpenseFormProps {
   onSuccess?: () => void;
-  initialData?: Partial<InsertExpense>;
+  initialData?: Partial<ExpenseFormData>;
 }
 
 export default function ExpenseForm({ onSuccess, initialData }: ExpenseFormProps) {
@@ -26,27 +37,27 @@ export default function ExpenseForm({ onSuccess, initialData }: ExpenseFormProps
   const queryClient = useQueryClient();
   const [uploadedReceiptUrl, setUploadedReceiptUrl] = useState<string | null>(null);
 
-  const form = useForm<InsertExpense>({
+  const form = useForm<ExpenseFormData>({
     resolver: zodResolver(insertExpenseSchema),
     defaultValues: {
       description: initialData?.description || "",
       amount: initialData?.amount || "",
       categoryId: initialData?.categoryId || "",
       vendor: initialData?.vendor || "",
-      date: initialData?.date || new Date(),
+      date: initialData?.date || new Date().toISOString().split('T')[0],
       notes: initialData?.notes || "",
       receiptPath: initialData?.receiptPath || null,
     },
   });
 
   // Fetch categories
-  const { data: categories = [], isLoading: categoriesLoading } = useQuery({
+  const { data: categories = [], isLoading: categoriesLoading } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
   });
 
   // Create expense mutation
   const createExpenseMutation = useMutation({
-    mutationFn: async (data: InsertExpense) => {
+    mutationFn: async (data: ExpenseFormData) => {
       const response = await apiRequest("POST", "/api/expenses", data);
       return response.json();
     },
@@ -83,15 +94,17 @@ export default function ExpenseForm({ onSuccess, initialData }: ExpenseFormProps
   const handleUploadComplete = (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
     if (result.successful && result.successful.length > 0) {
       const uploadUrl = result.successful[0].uploadURL;
-      setUploadedReceiptUrl(uploadUrl);
-      
-      // Extract the object path from the upload URL
-      const url = new URL(uploadUrl);
-      const pathParts = url.pathname.split('/');
-      const bucketIndex = pathParts.findIndex(part => part === 'uploads');
-      if (bucketIndex !== -1) {
-        const objectId = pathParts.slice(bucketIndex + 1).join('/');
-        form.setValue('receiptPath', `/objects/uploads/${objectId}`);
+      if (uploadUrl) {
+        setUploadedReceiptUrl(uploadUrl);
+        
+        // Extract the object path from the upload URL
+        const url = new URL(uploadUrl);
+        const pathParts = url.pathname.split('/');
+        const bucketIndex = pathParts.findIndex(part => part === 'uploads');
+        if (bucketIndex !== -1) {
+          const objectId = pathParts.slice(bucketIndex + 1).join('/');
+          form.setValue('receiptPath', `/objects/uploads/${objectId}`);
+        }
       }
       
       toast({
@@ -101,7 +114,7 @@ export default function ExpenseForm({ onSuccess, initialData }: ExpenseFormProps
     }
   };
 
-  const onSubmit = (data: InsertExpense) => {
+  const onSubmit = (data: ExpenseFormData) => {
     createExpenseMutation.mutate(data);
   };
 
@@ -124,8 +137,8 @@ export default function ExpenseForm({ onSuccess, initialData }: ExpenseFormProps
                       <Input
                         type="date"
                         {...field}
-                        value={field.value instanceof Date ? field.value.toISOString().split('T')[0] : field.value}
-                        onChange={(e) => field.onChange(new Date(e.target.value))}
+                        value={field.value}
+                        onChange={(e) => field.onChange(e.target.value)}
                         data-testid="input-date"
                       />
                     </FormControl>
@@ -139,7 +152,7 @@ export default function ExpenseForm({ onSuccess, initialData }: ExpenseFormProps
                 name="amount"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Amount ($)</FormLabel>
+                    <FormLabel>Amount (₹)</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
@@ -187,7 +200,7 @@ export default function ExpenseForm({ onSuccess, initialData }: ExpenseFormProps
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {categories.map((category: any) => (
+                        {categories.map((category) => (
                           <SelectItem key={category.id} value={category.id}>
                             {category.name}
                           </SelectItem>
