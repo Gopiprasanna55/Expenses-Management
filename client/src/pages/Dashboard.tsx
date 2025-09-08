@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "wouter";
 import { Plus, Download, Tags, Calendar, Bell, User } from "lucide-react";
 import { MONTHS } from "@/lib/constants";
+import { formatCurrency } from "@/lib/utils";
 
 export default function Dashboard() {
   const currentDate = new Date();
@@ -97,7 +98,7 @@ export default function Dashboard() {
                         <div className="flex justify-between text-sm mb-2">
                           <span className="text-muted-foreground">Progress</span>
                           <span className="font-medium text-foreground" data-testid="text-progress-amount">
-                            ${budgetSummary.totalExpenses.toLocaleString()} of ${budgetSummary.monthlyBudget.toLocaleString()}
+                            {formatCurrency(budgetSummary.totalExpenses)} of {formatCurrency(budgetSummary.monthlyBudget)}
                           </span>
                         </div>
                         <div className="w-full bg-muted rounded-full h-3">
@@ -112,13 +113,13 @@ export default function Dashboard() {
                       <div className="grid grid-cols-3 gap-4 pt-4">
                         <div className="text-center">
                           <div className="text-2xl font-bold text-foreground" data-testid="text-daily-average">
-                            ${budgetSummary.dailyAverage.toFixed(0)}
+                            {formatCurrency(budgetSummary.dailyAverage)}
                           </div>
                           <div className="text-xs text-muted-foreground">Daily Average</div>
                         </div>
                         <div className="text-center">
                           <div className="text-2xl font-bold text-foreground" data-testid="text-projected-spend">
-                            ${budgetSummary.projectedTotal.toFixed(0)}
+                            {formatCurrency(budgetSummary.projectedTotal)}
                           </div>
                           <div className="text-xs text-muted-foreground">Projected Total</div>
                         </div>

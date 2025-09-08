@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Search, Eye, Edit, Trash2, Paperclip, ChevronUp, ChevronDown } from "lucide-react";
 import type { ExpenseFilters, ExpenseSortBy, SortOrder } from "@shared/schema";
+import { formatCurrency } from "@/lib/utils";
 
 interface ExpenseTableProps {
   showFilters?: boolean;
@@ -266,7 +267,7 @@ export default function ExpenseTable({ showFilters = true, limit = 50, title = "
                     </TableCell>
                     <TableCell>
                       <div className="text-sm font-bold text-foreground" data-testid={`text-expense-amount-${expense.id}`}>
-                        ${parseFloat(expense.amount).toFixed(2)}
+                        {formatCurrency(expense.amount)}
                       </div>
                     </TableCell>
                     <TableCell>
