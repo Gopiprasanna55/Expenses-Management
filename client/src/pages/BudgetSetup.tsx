@@ -326,9 +326,9 @@ export default function BudgetSetup() {
                           </div>
                           
                           <div className="flex items-center space-x-2 mb-3">
-                            <DollarSign className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-lg text-muted-foreground">₹</span>
                             <span className="text-2xl font-bold text-foreground" data-testid={`text-budget-amount-${budget.id}`}>
-                              {formatCurrency(budget.amount)}
+                              {parseFloat(budget.amount).toLocaleString('en-IN')}
                             </span>
                           </div>
                           
