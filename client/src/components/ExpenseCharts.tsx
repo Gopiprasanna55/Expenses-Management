@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useState } from "react";
+import { formatCurrency } from "@/lib/utils";
 
 interface ExpenseChartsProps {
   month?: number;
@@ -107,7 +108,7 @@ export default function ExpenseCharts({ month, year }: ExpenseChartsProps) {
                   <YAxis 
                     stroke="hsl(var(--muted-foreground))"
                     fontSize={12}
-                    tickFormatter={(value) => `$${value}`}
+                    tickFormatter={(value) => formatCurrency(value)}
                   />
                   <Tooltip 
                     contentStyle={{
@@ -116,7 +117,7 @@ export default function ExpenseCharts({ month, year }: ExpenseChartsProps) {
                       borderRadius: "8px",
                       color: "hsl(var(--foreground))",
                     }}
-                    formatter={(value: number) => [`$${value.toFixed(2)}`, "Amount"]}
+                    formatter={(value: number) => [formatCurrency(value), "Amount"]}
                   />
                   <Line
                     type="monotone"
@@ -182,7 +183,7 @@ export default function ExpenseCharts({ month, year }: ExpenseChartsProps) {
                   </div>
                   <div className="text-right">
                     <div className="font-bold text-foreground" data-testid={`text-amount-${category.id}`}>
-                      ${category.totalAmount.toFixed(2)}
+                      {formatCurrency(category.totalAmount)}
                     </div>
                     <div className="text-xs text-muted-foreground" data-testid={`text-percentage-${category.id}`}>
                       {category.percentage.toFixed(1)}%

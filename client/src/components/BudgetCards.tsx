@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Wallet, TrendingUp, TrendingDown, Receipt } from "lucide-react";
 import { MONTHS } from "@/lib/constants";
+import { formatCurrency } from "@/lib/utils";
 
 interface BudgetCardsProps {
   month: number;
@@ -56,21 +57,21 @@ export default function BudgetCards({ month, year }: BudgetCardsProps) {
   const cards = [
     {
       title: "Monthly Budget",
-      value: `$${budgetSummary.monthlyBudget.toLocaleString()}`,
+      value: formatCurrency(budgetSummary.monthlyBudget),
       icon: Wallet,
       color: "bg-primary/10 text-primary",
       badge: "THIS MONTH",
     },
     {
       title: "Total Expenses",
-      value: `$${budgetSummary.totalExpenses.toLocaleString()}`,
+      value: formatCurrency(budgetSummary.totalExpenses),
       icon: TrendingUp,
       color: "bg-destructive/10 text-destructive",
       badge: "SPENT",
     },
     {
       title: "Budget Left",
-      value: `$${budgetSummary.budgetRemaining.toLocaleString()}`,
+      value: formatCurrency(budgetSummary.budgetRemaining),
       icon: TrendingDown,
       color: "bg-secondary/10 text-secondary",
       badge: "REMAINING",

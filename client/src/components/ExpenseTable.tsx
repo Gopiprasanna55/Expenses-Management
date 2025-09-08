@@ -150,12 +150,12 @@ export default function ExpenseTable({ showFilters = true, limit = 50, title = "
                 />
               </div>
               
-              <Select value={filters.categoryId || ''} onValueChange={(value) => handleFilterChange('categoryId', value)}>
+              <Select value={filters.categoryId || 'all'} onValueChange={(value) => handleFilterChange('categoryId', value === 'all' ? '' : value)}>
                 <SelectTrigger className="w-48" data-testid="select-category-filter">
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Categories</SelectItem>
+                  <SelectItem value="all">All Categories</SelectItem>
                   {categories.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       {category.name}
@@ -294,6 +294,10 @@ export default function ExpenseTable({ showFilters = true, limit = 50, title = "
                           size="sm"
                           variant="ghost"
                           className="h-8 w-8 p-0"
+                          onClick={() => {
+                            // Create a simple view modal or alert for now
+                            alert(`Expense Details:\n\nDescription: ${expense.description}\nAmount: ${formatCurrency(expense.amount)}\nCategory: ${expense.category.name}\nVendor: ${expense.vendor || 'N/A'}\nDate: ${formatDate(expense.date)}\nNotes: ${expense.notes || 'N/A'}`);
+                          }}
                           data-testid={`button-view-${expense.id}`}
                         >
                           <Eye className="w-4 h-4" />
@@ -302,6 +306,10 @@ export default function ExpenseTable({ showFilters = true, limit = 50, title = "
                           size="sm"
                           variant="ghost"
                           className="h-8 w-8 p-0"
+                          onClick={() => {
+                            // For now, show edit functionality - could be expanded to actual edit modal
+                            alert(`Edit functionality would open for expense: ${expense.description}`);
+                          }}
                           data-testid={`button-edit-${expense.id}`}
                         >
                           <Edit className="w-4 h-4" />
@@ -310,7 +318,12 @@ export default function ExpenseTable({ showFilters = true, limit = 50, title = "
                           size="sm"
                           variant="ghost"
                           className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                          onClick={() => deleteExpenseMutation.mutate(expense.id)}
+                          onClick={() => {
+                            const confirmed = window.confirm(`Are you sure you want to delete the expense "${expense.description}"?\n\nAmount: ${formatCurrency(expense.amount)}\nThis action cannot be undone.`);
+                            if (confirmed) {
+                              deleteExpenseMutation.mutate(expense.id);
+                            }
+                          }}
                           disabled={deleteExpenseMutation.isPending}
                           data-testid={`button-delete-${expense.id}`}
                         >
