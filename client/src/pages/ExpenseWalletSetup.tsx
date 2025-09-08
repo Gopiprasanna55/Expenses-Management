@@ -18,6 +18,7 @@ export default function ExpenseWalletSetup() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
+  const [editingWallet, setEditingWallet] = useState<ExpenseWallet | null>(null);
 
   const form = useForm<InsertExpenseWallet>({
     resolver: zodResolver(insertExpenseWalletSchema),
@@ -66,8 +67,54 @@ export default function ExpenseWalletSetup() {
     },
   });
 
+  // Update expense wallet mutation
+  const updateWalletMutation = useMutation({
+    mutationFn: async (data: { id: string; wallet: Partial<InsertExpenseWallet> }) => {
+      return await apiRequest("PUT", `/api/expense-wallets/${data.id}`, data.wallet);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/current-expense-wallet"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/expense-wallets"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/analytics/wallet-summary"] });
+      
+      toast({
+        title: "Success!",
+        description: "Wallet entry updated successfully",
+      });
+      
+      form.reset();
+      setIsEditing(false);
+      setEditingWallet(null);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to update wallet entry. Please try again.",
+        variant: "destructive",
+      });
+      console.error("Error updating wallet entry:", error);
+    },
+  });
+
   const onSubmit = (values: InsertExpenseWallet) => {
-    addBalanceMutation.mutate(values);
+    if (editingWallet) {
+      updateWalletMutation.mutate({ id: editingWallet.id, wallet: values });
+    } else {
+      addBalanceMutation.mutate(values);
+    }
+  };
+
+  const handleEditWalletEntry = (wallet: ExpenseWallet) => {
+    setEditingWallet(wallet);
+    form.setValue("amount", wallet.amount);
+    form.setValue("description", wallet.description || "");
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditingWallet(null);
+    form.reset();
   };
 
   const handleEdit = () => {
@@ -120,7 +167,7 @@ export default function ExpenseWalletSetup() {
                   <div className="flex items-center space-x-2">
                     <span className="text-2xl text-muted-foreground">₹</span>
                     <span className="text-3xl font-bold text-foreground" data-testid="text-current-wallet-amount">
-                      {parseFloat(currentWallet.amount).toLocaleString('en-IN')}
+                      {expenseWallets.reduce((total, wallet) => total + parseFloat(wallet.amount), 0).toLocaleString('en-IN')}
                     </span>
                   </div>
                   {currentWallet.description && (
@@ -129,7 +176,7 @@ export default function ExpenseWalletSetup() {
                     </p>
                   )}
                   <div className="text-sm text-muted-foreground">
-                    Last updated: {new Date(currentWallet.updatedAt).toLocaleDateString()}
+                    Total from {expenseWallets.length} balance {expenseWallets.length === 1 ? 'entry' : 'entries'}
                   </div>
                 </div>
               </CardContent>
@@ -198,12 +245,23 @@ export default function ExpenseWalletSetup() {
                     <div className="flex space-x-3">
                       <Button 
                         type="submit" 
-                        disabled={addBalanceMutation.isPending}
+                        disabled={addBalanceMutation.isPending || updateWalletMutation.isPending}
                         data-testid="button-save-wallet"
                       >
-                        {addBalanceMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                        {currentWallet ? "Add Balance" : "Set Initial Balance"}
+                        {(addBalanceMutation.isPending || updateWalletMutation.isPending) && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                        {editingWallet ? "Update Entry" : currentWallet ? "Add Balance" : "Set Initial Balance"}
                       </Button>
+
+                      {editingWallet && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleCancelEdit}
+                          data-testid="button-cancel-edit"
+                        >
+                          Cancel
+                        </Button>
+                      )}
 
                     </div>
                   </form>
@@ -241,9 +299,19 @@ export default function ExpenseWalletSetup() {
                             </div>
                           )}
                         </div>
-                        <div className="text-right">
-                          <div className="text-sm text-muted-foreground">
-                            {new Date(wallet.createdAt).toLocaleDateString()}
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditWalletEntry(wallet)}
+                            data-testid={`button-edit-wallet-${wallet.id}`}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <div className="text-right">
+                            <div className="text-sm text-muted-foreground">
+                              {new Date(wallet.createdAt).toLocaleDateString()}
+                            </div>
                           </div>
                         </div>
                       </div>

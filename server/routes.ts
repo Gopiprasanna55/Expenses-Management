@@ -99,7 +99,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/expense-wallets/:id", async (req, res) => {
     try {
       const { id } = req.params;
-      const walletData = updateExpenseWalletSchema.parse(req.body);
+      const walletData = insertExpenseWalletSchema.partial().parse(req.body);
       const expenseWallet = await storage.updateExpenseWallet(id, walletData);
       
       if (!expenseWallet) {

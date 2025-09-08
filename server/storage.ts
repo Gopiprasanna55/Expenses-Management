@@ -13,7 +13,7 @@ export interface IStorage {
   getExpenseWallets(): Promise<ExpenseWallet[]>;
   getCurrentExpenseWallet(): Promise<ExpenseWallet | undefined>;
   createExpenseWallet(wallet: InsertExpenseWallet): Promise<ExpenseWallet>;
-  updateExpenseWallet(id: string, wallet: Partial<UpdateExpenseWallet>): Promise<ExpenseWallet | undefined>;
+  updateExpenseWallet(id: string, wallet: Partial<InsertExpenseWallet>): Promise<ExpenseWallet | undefined>;
   deleteExpenseWallet(id: string): Promise<boolean>;
   
   // Expense operations
@@ -137,7 +137,7 @@ export class MemStorage implements IStorage {
     return newWallet;
   }
 
-  async updateExpenseWallet(id: string, wallet: Partial<UpdateExpenseWallet>): Promise<ExpenseWallet | undefined> {
+  async updateExpenseWallet(id: string, wallet: Partial<InsertExpenseWallet>): Promise<ExpenseWallet | undefined> {
     const existing = this.expenseWallets.get(id);
     if (!existing) return undefined;
 
@@ -339,7 +339,9 @@ export class MemStorage implements IStorage {
     const projectedTotal = isCurrentMonth && daysPassed > 0 ? (dailyAverage * daysInMonth) : totalExpenses;
     
     // Calculate days left in month
-    const daysLeft = isCurrentMonth ? daysInMonth - currentDate.getDate() : 0;
+    const currentYear = currentDate.getFullYear();
+    const daysLeft = isCurrentMonth ? daysInMonth - currentDate.getDate() : 
+                     (year > currentYear || (year === currentYear && month > currentDate.getMonth() + 1)) ? daysInMonth : 0;
 
     return {
       walletAmount: monthlyBudget,
