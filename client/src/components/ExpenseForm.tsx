@@ -83,8 +83,10 @@ export default function ExpenseForm({ onSuccess, initialData }: ExpenseFormProps
   });
 
   const handleGetUploadParameters = async () => {
+    console.log('Getting upload parameters...');
     const response = await apiRequest("POST", "/api/objects/upload", {});
     const data = await response.json();
+    console.log('Upload parameters response:', data);
     return {
       method: "PUT" as const,
       url: data.uploadURL,
@@ -92,18 +94,27 @@ export default function ExpenseForm({ onSuccess, initialData }: ExpenseFormProps
   };
 
   const handleUploadComplete = (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
+    console.log('Upload complete result:', result);
     if (result.successful && result.successful.length > 0) {
       const uploadUrl = result.successful[0].uploadURL;
+      console.log('Upload URL:', uploadUrl);
       if (uploadUrl) {
         setUploadedReceiptUrl(uploadUrl);
         
         // Extract the object path from the upload URL
         const url = new URL(uploadUrl);
+        console.log('URL pathname:', url.pathname);
         const pathParts = url.pathname.split('/');
+        console.log('Path parts:', pathParts);
         const bucketIndex = pathParts.findIndex(part => part === 'uploads');
+        console.log('Bucket index:', bucketIndex);
         if (bucketIndex !== -1) {
           const objectId = pathParts.slice(bucketIndex + 1).join('/');
-          form.setValue('receiptPath', `/objects/uploads/${objectId}`);
+          const receiptPath = `/objects/uploads/${objectId}`;
+          console.log('Setting receipt path:', receiptPath);
+          form.setValue('receiptPath', receiptPath);
+        } else {
+          console.error('Could not find uploads in path:', pathParts);
         }
       }
       
