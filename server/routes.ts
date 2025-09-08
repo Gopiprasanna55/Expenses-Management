@@ -96,13 +96,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/budgets", async (req, res) => {
     try {
       const budgetData = insertBudgetSchema.parse(req.body);
-      
-      // Check if budget already exists for this month/year
-      const existing = await storage.getBudgetByMonthYear(budgetData.month, budgetData.year);
-      if (existing) {
-        return res.status(400).json({ error: "Budget already exists for this month/year" });
-      }
-      
       const budget = await storage.createBudget(budgetData);
       res.status(201).json(budget);
     } catch (error) {

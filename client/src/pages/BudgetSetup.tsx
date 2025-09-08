@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Plus, Edit, Trash2, Loader2, Calendar, DollarSign } from "lucide-react";
 import { MONTHS } from "@/lib/constants";
+import { formatCurrency } from "@/lib/utils";
 
 export default function BudgetSetup() {
   const { toast } = useToast();
@@ -145,7 +146,7 @@ export default function BudgetSetup() {
                   </Link>
                   <div>
                     <h2 className="text-2xl font-bold text-foreground" data-testid="text-page-title">Budget Setup</h2>
-                    <p className="text-muted-foreground">Manage monthly budgets</p>
+                    <p className="text-muted-foreground">Manage budgets for different periods</p>
                   </div>
                 </div>
               </div>
@@ -233,7 +234,7 @@ export default function BudgetSetup() {
                       name="amount"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Budget Amount ($)</FormLabel>
+                          <FormLabel>Budget Amount (₹)</FormLabel>
                           <FormControl>
                             <Input
                               type="number"
@@ -281,7 +282,7 @@ export default function BudgetSetup() {
         <main className="p-6">
           <Card>
             <CardHeader>
-              <CardTitle data-testid="text-budgets-title">Monthly Budgets</CardTitle>
+              <CardTitle data-testid="text-budgets-title">Budget Management</CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -327,7 +328,7 @@ export default function BudgetSetup() {
                           <div className="flex items-center space-x-2 mb-3">
                             <DollarSign className="w-4 h-4 text-muted-foreground" />
                             <span className="text-2xl font-bold text-foreground" data-testid={`text-budget-amount-${budget.id}`}>
-                              ${parseFloat(budget.amount).toLocaleString()}
+                              {formatCurrency(budget.amount)}
                             </span>
                           </div>
                           
