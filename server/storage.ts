@@ -309,34 +309,42 @@ export class MemStorage implements IStorage {
   }
 
   async getWalletSummaryForMonth(month: number, year: number): Promise<WalletSummary> {
-    // Calculate total wallet amount from all wallet entries
+    // Calculate total wallet balance from all wallet entries (like prepaid recharge)
     const allWallets = Array.from(this.expenseWallets.values());
-    const monthlyBudget = allWallets.reduce((total, wallet) => total + parseFloat(wallet.amount), 0);
+    const totalWalletBalance = allWallets.reduce((total, wallet) => total + parseFloat(wallet.amount), 0);
 
-    // Filter expenses for the specific month and year
+    // Get ALL expenses ever made (to calculate remaining balance)
+    const allExpenses = Array.from(this.expenses.values());
+    const totalExpensesEver = allExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
+    
+    // Calculate available balance (like prepaid balance remaining)
+    const availableBalance = totalWalletBalance - totalExpensesEver;
+
+    // Filter expenses for the specific month and year only
     const startOfMonth = new Date(year, month - 1, 1);
     const endOfMonth = new Date(year, month, 0);
     
-    let monthlyExpenses = Array.from(this.expenses.values()).filter(exp => {
+    let monthlyExpenses = allExpenses.filter(exp => {
       const expDate = new Date(exp.date);
       return expDate >= startOfMonth && expDate <= endOfMonth;
     });
 
-    const totalExpenses = monthlyExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
-    const remainingAmount = monthlyBudget - totalExpenses;
-    const expenseCount = monthlyExpenses.length;
-    const averageExpense = expenseCount > 0 ? totalExpenses / expenseCount : 0;
-    const percentageUsed = monthlyBudget > 0 ? (totalExpenses / monthlyBudget) * 100 : 0;
+    const monthlyExpenseAmount = monthlyExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
+    const monthlyExpenseCount = monthlyExpenses.length;
+    const monthlyAverageExpense = monthlyExpenseCount > 0 ? monthlyExpenseAmount / monthlyExpenseCount : 0;
+    
+    // Percentage used is monthly expenses vs total wallet balance
+    const monthlyPercentageUsed = totalWalletBalance > 0 ? (monthlyExpenseAmount / totalWalletBalance) * 100 : 0;
 
     // Calculate daily average for the month
     const currentDate = new Date();
     const daysInMonth = endOfMonth.getDate();
     const isCurrentMonth = currentDate.getMonth() === month - 1 && currentDate.getFullYear() === year;
     const daysPassed = isCurrentMonth ? currentDate.getDate() : daysInMonth;
-    const dailyAverage = daysPassed > 0 ? totalExpenses / daysPassed : 0;
+    const dailyAverage = daysPassed > 0 ? monthlyExpenseAmount / daysPassed : 0;
     
     // Calculate projected total (if current month)
-    const projectedTotal = isCurrentMonth && daysPassed > 0 ? (dailyAverage * daysInMonth) : totalExpenses;
+    const projectedTotal = isCurrentMonth && daysPassed > 0 ? (dailyAverage * daysInMonth) : monthlyExpenseAmount;
     
     // Calculate days left in month
     const currentYear = currentDate.getFullYear();
@@ -344,13 +352,13 @@ export class MemStorage implements IStorage {
                      (year > currentYear || (year === currentYear && month > currentDate.getMonth() + 1)) ? daysInMonth : 0;
 
     return {
-      walletAmount: monthlyBudget,
-      monthlyBudget,
-      totalExpenses,
-      remainingAmount,
-      expenseCount,
-      averageExpense,
-      percentageUsed,
+      walletAmount: totalWalletBalance,           // Total wallet balance (all additions)
+      monthlyBudget: totalWalletBalance,         // Same as wallet amount for consistency
+      totalExpenses: monthlyExpenseAmount,       // Expenses for this month only
+      remainingAmount: availableBalance,         // Available balance after all expenses
+      expenseCount: monthlyExpenseCount,         // Count for this month only
+      averageExpense: monthlyAverageExpense,     // Average for this month only
+      percentageUsed: monthlyPercentageUsed,     // Monthly expenses vs total wallet
       dailyAverage,
       projectedTotal,
       daysLeft,

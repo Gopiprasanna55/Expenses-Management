@@ -78,22 +78,19 @@ export default function Dashboard() {
         
         {/* Dashboard Content */}
         <main className="p-6 space-y-6">
-          {/* Budget Overview Cards */}
+          {/* Wallet Overview Cards */}
           <BudgetCards month={selectedMonth} year={selectedYear} />
           
-          {/* Budget Progress and Quick Actions */}
+          {/* Wallet Progress and Quick Actions */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Budget Progress */}
             <div className="lg:col-span-2">
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle>Expense Summary</CardTitle>
+                    <CardTitle>Monthly Expense Tracking</CardTitle>
                     <div className="text-sm text-muted-foreground" data-testid="text-budget-usage">
-                      {budgetSummary ? `${budgetSummary.percentageUsed.toFixed(0)}% used • ` : "Loading... "}
-                      <span className="text-secondary font-medium">
-                        {budgetSummary ? `${(100 - budgetSummary.percentageUsed).toFixed(0)}% remaining` : ""}
-                      </span>
+                      {budgetSummary ? `${budgetSummary.percentageUsed.toFixed(1)}% of wallet used this month` : "Loading... "}
                     </div>
                   </div>
                 </CardHeader>
@@ -102,9 +99,9 @@ export default function Dashboard() {
                     <>
                       <div>
                         <div className="flex justify-between text-sm mb-2">
-                          <span className="text-muted-foreground">Progress</span>
+                          <span className="text-muted-foreground">Monthly Usage</span>
                           <span className="font-medium text-foreground" data-testid="text-progress-amount">
-                            {formatCurrency(budgetSummary.totalExpenses)} of {formatCurrency(budgetSummary.monthlyBudget || budgetSummary.walletAmount)}
+                            {formatCurrency(budgetSummary.totalExpenses)} from {formatCurrency(budgetSummary.walletAmount)} wallet
                           </span>
                         </div>
                         <div className="w-full bg-muted rounded-full h-3">

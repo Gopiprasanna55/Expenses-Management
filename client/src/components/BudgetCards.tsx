@@ -56,32 +56,32 @@ export default function BudgetCards({ month, year }: BudgetCardsProps) {
 
   const cards = [
     {
-      title: "Expense Wallet",
-      value: formatCurrency(budgetSummary.monthlyBudget || budgetSummary.walletAmount),
+      title: "Total Wallet Balance",
+      value: formatCurrency(budgetSummary.walletAmount),
       icon: Wallet,
       color: "bg-primary/10 text-primary",
-      badge: "THIS MONTH",
+      badge: "TOTAL RECHARGED",
     },
     {
-      title: "Total Expenses",
+      title: "Monthly Expenses",
       value: formatCurrency(budgetSummary.totalExpenses),
       icon: TrendingUp,
       color: "bg-destructive/10 text-destructive",
-      badge: "SPENT",
+      badge: `${MONTHS[month - 1].substring(0, 3).toUpperCase()} ${year}`,
     },
     {
-      title: "Wallet Balance",
+      title: "Available Balance",
       value: formatCurrency(budgetSummary.remainingAmount),
       icon: TrendingDown,
-      color: "bg-secondary/10 text-secondary",
-      badge: "AVAILABLE",
+      color: budgetSummary.remainingAmount < 0 ? "bg-destructive/10 text-destructive" : "bg-green-100 text-green-600",
+      badge: "REMAINING",
     },
     {
-      title: "Expense Count",
+      title: "Monthly Transactions",
       value: budgetSummary.expenseCount.toString(),
       icon: Receipt,
       color: "bg-accent text-muted-foreground",
-      badge: "COUNT",
+      badge: `${MONTHS[month - 1].substring(0, 3).toUpperCase()}`,
     },
   ];
 
