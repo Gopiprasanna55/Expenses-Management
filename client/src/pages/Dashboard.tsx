@@ -82,7 +82,7 @@ export default function Dashboard() {
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle>Budget Usage</CardTitle>
+                    <CardTitle>Expense Summary</CardTitle>
                     <div className="text-sm text-muted-foreground" data-testid="text-budget-usage">
                       {budgetSummary ? `${budgetSummary.percentageUsed.toFixed(0)}% used • ` : "Loading... "}
                       <span className="text-secondary font-medium">
@@ -98,14 +98,14 @@ export default function Dashboard() {
                         <div className="flex justify-between text-sm mb-2">
                           <span className="text-muted-foreground">Progress</span>
                           <span className="font-medium text-foreground" data-testid="text-progress-amount">
-                            {formatCurrency(budgetSummary.totalExpenses)} of {formatCurrency(budgetSummary.monthlyBudget)}
+                            {formatCurrency(budgetSummary.totalExpenses)} of {formatCurrency(budgetSummary.monthlyBudget || budgetSummary.walletAmount)}
                           </span>
                         </div>
                         <div className="w-full bg-muted rounded-full h-3">
                           <div 
                             className="h-3 rounded-full bg-gradient-to-r from-secondary to-primary transition-all duration-300"
                             style={{ width: `${Math.min(budgetSummary.percentageUsed, 100)}%` }}
-                            data-testid="progress-budget-bar"
+                            data-testid="progress-expense-bar"
                           />
                         </div>
                       </div>

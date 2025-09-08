@@ -49,15 +49,15 @@ export default function BudgetCards({ month, year }: BudgetCardsProps) {
   if (!budgetSummary) {
     return (
       <div className="text-center py-8">
-        <div className="text-muted-foreground">Failed to load budget summary</div>
+        <div className="text-muted-foreground">Failed to load expense summary</div>
       </div>
     );
   }
 
   const cards = [
     {
-      title: "Monthly Budget",
-      value: formatCurrency(budgetSummary.monthlyBudget),
+      title: "Expense Wallet",
+      value: formatCurrency(budgetSummary.monthlyBudget || budgetSummary.walletAmount),
       icon: Wallet,
       color: "bg-primary/10 text-primary",
       badge: "THIS MONTH",
@@ -70,14 +70,14 @@ export default function BudgetCards({ month, year }: BudgetCardsProps) {
       badge: "SPENT",
     },
     {
-      title: "Budget Left",
-      value: formatCurrency(budgetSummary.budgetRemaining),
+      title: "Wallet Balance",
+      value: formatCurrency(budgetSummary.remainingAmount),
       icon: TrendingDown,
       color: "bg-secondary/10 text-secondary",
-      badge: "REMAINING",
+      badge: "AVAILABLE",
     },
     {
-      title: "Total Expenses",
+      title: "Expense Count",
       value: budgetSummary.expenseCount.toString(),
       icon: Receipt,
       color: "bg-accent text-muted-foreground",
