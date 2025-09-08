@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertSpendingLimitSchema, type InsertSpendingLimit, type SpendingLimit } from "@shared/schema";
+import { insertExpenseWalletSchema, type InsertExpenseWallet, type ExpenseWallet } from "@shared/schema";
 import Sidebar from "@/components/Sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,48 +14,48 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Plus, Loader2, Target, Edit } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 
-export default function SpendingLimitSetup() {
+export default function ExpenseWalletSetup() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
 
-  const form = useForm<InsertSpendingLimit>({
-    resolver: zodResolver(insertSpendingLimitSchema),
+  const form = useForm<InsertExpenseWallet>({
+    resolver: zodResolver(insertExpenseWalletSchema),
     defaultValues: {
       amount: "",
       description: "",
     },
   });
 
-  // Fetch current spending limit
-  const { data: currentLimit, isLoading } = useQuery<SpendingLimit>({
-    queryKey: ["/api/current-spending-limit"],
+  // Fetch current expense wallet
+  const { data: currentWallet, isLoading } = useQuery<ExpenseWallet>({
+    queryKey: ["/api/current-expense-wallet"],
   });
 
-  // Fetch all spending limits for history
-  const { data: spendingLimits = [] } = useQuery<SpendingLimit[]>({
-    queryKey: ["/api/spending-limits"],
+  // Fetch all expense wallets for history
+  const { data: expenseWallets = [] } = useQuery<ExpenseWallet[]>({
+    queryKey: ["/api/expense-wallets"],
   });
 
-  // Create/Update spending limit mutation
+  // Create/Update expense wallet mutation
   const createMutation = useMutation({
-    mutationFn: async (data: InsertSpendingLimit) => {
-      if (currentLimit && !isEditing) {
-        // If there's already a current limit and we're not editing, update it
-        return await apiRequest("PUT", `/api/spending-limits/${currentLimit.id}`, data);
+    mutationFn: async (data: InsertExpenseWallet) => {
+      if (currentWallet && !isEditing) {
+        // If there's already a current wallet and we're not editing, update it
+        return await apiRequest("PUT", `/api/expense-wallets/${currentWallet.id}`, data);
       } else {
         // Otherwise create a new one
-        return await apiRequest("POST", "/api/spending-limits", data);
+        return await apiRequest("POST", "/api/expense-wallets", data);
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/current-spending-limit"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/spending-limits"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/analytics/spending-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/current-expense-wallet"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/expense-wallets"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/analytics/wallet-summary"] });
       
       toast({
         title: "Success!",
-        description: currentLimit ? "Spending limit updated successfully" : "Spending limit set successfully",
+        description: currentWallet ? "Expense wallet updated successfully" : "Expense wallet set successfully",
       });
       
       form.reset();
@@ -64,21 +64,21 @@ export default function SpendingLimitSetup() {
     onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to save spending limit. Please try again.",
+        description: "Failed to save expense wallet. Please try again.",
         variant: "destructive",
       });
-      console.error("Error saving spending limit:", error);
+      console.error("Error saving expense wallet:", error);
     },
   });
 
-  const onSubmit = (values: InsertSpendingLimit) => {
+  const onSubmit = (values: InsertExpenseWallet) => {
     createMutation.mutate(values);
   };
 
   const handleEdit = () => {
-    if (currentLimit) {
-      form.setValue("amount", currentLimit.amount);
-      form.setValue("description", currentLimit.description || "");
+    if (currentWallet) {
+      form.setValue("amount", currentWallet.amount);
+      form.setValue("description", currentWallet.description || "");
       setIsEditing(true);
     }
   };
@@ -100,8 +100,8 @@ export default function SpendingLimitSetup() {
               </Link>
               
               <div className="md:ml-0 ml-2">
-                <h2 className="text-2xl font-bold text-foreground" data-testid="text-page-title">Spending Limit</h2>
-                <p className="text-muted-foreground">Set and manage your expense spending limit</p>
+                <h2 className="text-2xl font-bold text-foreground" data-testid="text-page-title">Expense Wallet</h2>
+                <p className="text-muted-foreground">Set and manage your expense wallet balance</p>
               </div>
             </div>
           </div>
@@ -109,20 +109,20 @@ export default function SpendingLimitSetup() {
         
         {/* Content */}
         <main className="p-6 space-y-6">
-          {/* Current Spending Limit Display */}
-          {currentLimit && !isEditing && (
+          {/* Current Expense Wallet Display */}
+          {currentWallet && !isEditing && (
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <Target className="w-5 h-5 text-primary" />
-                    <CardTitle>Current Spending Limit</CardTitle>
+                    <CardTitle>Current Expense Wallet Balance</CardTitle>
                   </div>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={handleEdit}
-                    data-testid="button-edit-current-limit"
+                    data-testid="button-edit-current-wallet"
                   >
                     <Edit className="w-4 h-4 mr-2" />
                     Update
@@ -133,30 +133,30 @@ export default function SpendingLimitSetup() {
                 <div className="space-y-4">
                   <div className="flex items-center space-x-2">
                     <span className="text-2xl text-muted-foreground">₹</span>
-                    <span className="text-3xl font-bold text-foreground" data-testid="text-current-limit-amount">
-                      {parseFloat(currentLimit.amount).toLocaleString('en-IN')}
+                    <span className="text-3xl font-bold text-foreground" data-testid="text-current-wallet-amount">
+                      {parseFloat(currentWallet.amount).toLocaleString('en-IN')}
                     </span>
                   </div>
-                  {currentLimit.description && (
-                    <p className="text-muted-foreground" data-testid="text-current-limit-description">
-                      {currentLimit.description}
+                  {currentWallet.description && (
+                    <p className="text-muted-foreground" data-testid="text-current-wallet-description">
+                      {currentWallet.description}
                     </p>
                   )}
                   <div className="text-sm text-muted-foreground">
-                    Last updated: {new Date(currentLimit.updatedAt).toLocaleDateString()}
+                    Last updated: {new Date(currentWallet.updatedAt).toLocaleDateString()}
                   </div>
                 </div>
               </CardContent>
             </Card>
           )}
 
-          {/* Spending Limit Form */}
-          {(!currentLimit || isEditing) && (
+          {/* Expense Wallet Form */}
+          {(!currentWallet || isEditing) && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <Plus className="w-5 h-5" />
-                  <span>{currentLimit ? "Update Spending Limit" : "Set Spending Limit"}</span>
+                  <span>{currentWallet ? "Update Expense Wallet" : "Set Expense Wallet"}</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -167,14 +167,14 @@ export default function SpendingLimitSetup() {
                       name="amount"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Spending Limit Amount (₹)</FormLabel>
+                          <FormLabel>Wallet Amount (₹)</FormLabel>
                           <FormControl>
                             <Input
                               type="number"
                               step="0.01"
                               placeholder="10000.00"
                               {...field}
-                              data-testid="input-spending-limit-amount"
+                              data-testid="input-wallet-amount"
                             />
                           </FormControl>
                           <FormMessage />
@@ -190,11 +190,11 @@ export default function SpendingLimitSetup() {
                           <FormLabel>Description (Optional)</FormLabel>
                           <FormControl>
                             <Textarea
-                              placeholder="e.g., Monthly expense allowance"
+                              placeholder="e.g., Initial wallet setup"
                               className="resize-none"
                               {...field}
                               value={field.value || ""}
-                              data-testid="input-spending-limit-description"
+                              data-testid="input-wallet-description"
                             />
                           </FormControl>
                           <FormMessage />
@@ -206,10 +206,10 @@ export default function SpendingLimitSetup() {
                       <Button 
                         type="submit" 
                         disabled={createMutation.isPending}
-                        data-testid="button-save-spending-limit"
+                        data-testid="button-save-wallet"
                       >
                         {createMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                        {currentLimit ? "Update Limit" : "Set Limit"}
+                        {currentWallet ? "Update Wallet" : "Set Wallet"}
                       </Button>
 
                       {isEditing && (
@@ -233,39 +233,39 @@ export default function SpendingLimitSetup() {
           )}
 
           {/* History */}
-          {spendingLimits.length > 1 && (
+          {expenseWallets.length > 1 && (
             <Card>
               <CardHeader>
-                <CardTitle>Previous Limits</CardTitle>
+                <CardTitle>Previous Wallets</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {spendingLimits
-                    .filter(limit => limit.id !== currentLimit?.id)
+                  {expenseWallets
+                    .filter(wallet => wallet.id !== currentWallet?.id)
                     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
                     .slice(0, 5) // Show only last 5
-                    .map((limit) => (
+                    .map((wallet) => (
                       <div
-                        key={limit.id}
+                        key={wallet.id}
                         className="flex items-center justify-between p-3 border border-border rounded-lg"
-                        data-testid={`item-previous-limit-${limit.id}`}
+                        data-testid={`item-previous-wallet-${wallet.id}`}
                       >
                         <div>
                           <div className="flex items-center space-x-2">
                             <span className="text-lg text-muted-foreground">₹</span>
                             <span className="font-medium text-foreground">
-                              {parseFloat(limit.amount).toLocaleString('en-IN')}
+                              {parseFloat(wallet.amount).toLocaleString('en-IN')}
                             </span>
                           </div>
-                          {limit.description && (
+                          {wallet.description && (
                             <div className="text-sm text-muted-foreground mt-1">
-                              {limit.description}
+                              {wallet.description}
                             </div>
                           )}
                         </div>
                         <div className="text-right">
                           <div className="text-sm text-muted-foreground">
-                            {new Date(limit.updatedAt).toLocaleDateString()}
+                            {new Date(wallet.updatedAt).toLocaleDateString()}
                           </div>
                         </div>
                       </div>

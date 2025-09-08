@@ -141,30 +141,32 @@ export default function Dashboard() {
               <CardHeader>
                 <CardTitle>Quick Actions</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <Link href="/add-expense">
-                  <Button className="w-full justify-start" data-testid="button-add-expense">
-                    <Plus className="w-4 h-4 mr-3" />
-                    Add New Expense
+              <CardContent className="space-y-4">
+                <div className="flex flex-col space-y-3">
+                  <Link href="/add-expense">
+                    <Button className="w-full justify-start h-12" data-testid="button-add-expense">
+                      <Plus className="w-4 h-4 mr-3" />
+                      Add New Expense
+                    </Button>
+                  </Link>
+                  
+                  <Button 
+                    variant="secondary" 
+                    className="w-full justify-start h-12"
+                    onClick={handleExportCSV}
+                    data-testid="button-export-excel"
+                  >
+                    <Download className="w-4 h-4 mr-3" />
+                    Export to Excel
                   </Button>
-                </Link>
-                
-                <Button 
-                  variant="secondary" 
-                  className="w-full justify-start"
-                  onClick={handleExportCSV}
-                  data-testid="button-export-excel"
-                >
-                  <Download className="w-4 h-4 mr-3" />
-                  Export to Excel
-                </Button>
-                
-                <Link href="/categories">
-                  <Button variant="secondary" className="w-full justify-start" data-testid="button-manage-categories">
-                    <Tags className="w-4 h-4 mr-3" />
-                    Manage Categories
-                  </Button>
-                </Link>
+                  
+                  <Link href="/categories">
+                    <Button variant="secondary" className="w-full justify-start h-12" data-testid="button-manage-categories">
+                      <Tags className="w-4 h-4 mr-3" />
+                      Manage Categories
+                    </Button>
+                  </Link>
+                </div>
               </CardContent>
             </Card>
           </div>

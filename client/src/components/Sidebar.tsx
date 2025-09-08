@@ -19,7 +19,7 @@ const navigation = [
   { name: "Add Expense", href: "/add-expense", icon: Plus },
   { name: "All Expenses", href: "/expenses", icon: List },
   { name: "Categories", href: "/categories", icon: Tags },
-  { name: "Spending Limit", href: "/budget", icon: Calendar },
+  { name: "Expense Wallet", href: "/budget", icon: Calendar },
 ];
 
 interface SidebarProps {
