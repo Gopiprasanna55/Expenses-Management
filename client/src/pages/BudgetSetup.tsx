@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertBudgetSchema, type InsertBudget, type Budget } from "@shared/schema";
+import { insertSpendingLimitSchema, type InsertSpendingLimit, type SpendingLimit } from "@shared/schema";
 import Sidebar from "@/components/Sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,17 +27,16 @@ export default function BudgetSetup() {
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth() + 1;
 
-  const form = useForm<InsertBudget>({
-    resolver: zodResolver(insertBudgetSchema),
+  const form = useForm<InsertSpendingLimit>({
+    resolver: zodResolver(insertSpendingLimitSchema),
     defaultValues: {
-      month: currentMonth,
-      year: currentYear,
       amount: "",
+      description: "",
     },
   });
 
-  // Fetch budgets
-  const { data: budgets = [], isLoading } = useQuery<Budget[]>({
+  // Fetch spending limits
+  const { data: spendingLimits = [], isLoading } = useQuery<SpendingLimit[]>({
     queryKey: ["/api/budgets"],
   });
 

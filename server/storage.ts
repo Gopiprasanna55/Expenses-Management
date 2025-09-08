@@ -1,4 +1,4 @@
-import { type Category, type InsertCategory, type Budget, type InsertBudget, type Expense, type InsertExpense, type UpdateExpense, type ExpenseWithCategory, type BudgetSummary, type CategoryBreakdown, type ExpenseFilters, type ExpenseSortBy, type SortOrder } from "@shared/schema";
+import { type Category, type InsertCategory, type SpendingLimit, type InsertSpendingLimit, type UpdateSpendingLimit, type Expense, type InsertExpense, type UpdateExpense, type ExpenseWithCategory, type SpendingSummary, type CategoryBreakdown, type ExpenseFilters, type ExpenseSortBy, type SortOrder } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -9,12 +9,12 @@ export interface IStorage {
   updateCategory(id: string, category: Partial<InsertCategory>): Promise<Category | undefined>;
   deleteCategory(id: string): Promise<boolean>;
   
-  // Budget operations
-  getBudgets(): Promise<Budget[]>;
-  getBudgetByMonthYear(month: number, year: number): Promise<Budget | undefined>;
-  createBudget(budget: InsertBudget): Promise<Budget>;
-  updateBudget(id: string, budget: Partial<InsertBudget>): Promise<Budget | undefined>;
-  deleteBudget(id: string): Promise<boolean>;
+  // Spending Limit operations
+  getSpendingLimits(): Promise<SpendingLimit[]>;
+  getCurrentSpendingLimit(): Promise<SpendingLimit | undefined>;
+  createSpendingLimit(limit: InsertSpendingLimit): Promise<SpendingLimit>;
+  updateSpendingLimit(id: string, limit: Partial<UpdateSpendingLimit>): Promise<SpendingLimit | undefined>;
+  deleteSpendingLimit(id: string): Promise<boolean>;
   
   // Expense operations
   getExpenses(filters?: ExpenseFilters, sortBy?: ExpenseSortBy, sortOrder?: SortOrder, limit?: number, offset?: number): Promise<ExpenseWithCategory[]>;
@@ -25,19 +25,19 @@ export interface IStorage {
   getExpensesCount(filters?: ExpenseFilters): Promise<number>;
   
   // Analytics operations
-  getBudgetSummary(month: number, year: number): Promise<BudgetSummary>;
+  getSpendingSummary(): Promise<SpendingSummary>;
   getCategoryBreakdown(month?: number, year?: number): Promise<CategoryBreakdown[]>;
   getExpenseTrends(days: number): Promise<{ date: string; amount: number }[]>;
 }
 
 export class MemStorage implements IStorage {
   private categories: Map<string, Category>;
-  private budgets: Map<string, Budget>;
+  private spendingLimits: Map<string, SpendingLimit>;
   private expenses: Map<string, Expense>;
 
   constructor() {
     this.categories = new Map();
-    this.budgets = new Map();
+    this.spendingLimits = new Map();
     this.expenses = new Map();
     this.initializeDefaultData();
   }
@@ -61,15 +61,15 @@ export class MemStorage implements IStorage {
       });
     });
 
-    // Initialize current month budget
+    // Initialize default spending limit
     const now = new Date();
-    const budgetId = randomUUID();
-    this.budgets.set(budgetId, {
-      id: budgetId,
-      month: now.getMonth() + 1,
-      year: now.getFullYear(),
-      amount: "5000.00",
+    const limitId = randomUUID();
+    this.spendingLimits.set(limitId, {
+      id: limitId,
+      amount: "10000.00",
+      description: "Monthly spending allowance",
       createdAt: now,
+      updatedAt: now,
     });
   }
 
@@ -112,39 +112,45 @@ export class MemStorage implements IStorage {
     return true;
   }
 
-  // Budget operations
-  async getBudgets(): Promise<Budget[]> {
-    return Array.from(this.budgets.values());
+  // Spending Limit operations
+  async getSpendingLimits(): Promise<SpendingLimit[]> {
+    return Array.from(this.spendingLimits.values());
   }
 
-  async getBudgetByMonthYear(month: number, year: number): Promise<Budget | undefined> {
-    return Array.from(this.budgets.values()).find(
-      budget => budget.month === month && budget.year === year
-    );
+  async getCurrentSpendingLimit(): Promise<SpendingLimit | undefined> {
+    const limits = Array.from(this.spendingLimits.values());
+    // For simplified system, return the most recent one
+    return limits.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())[0];
   }
 
-  async createBudget(budget: InsertBudget): Promise<Budget> {
+  async createSpendingLimit(limit: InsertSpendingLimit): Promise<SpendingLimit> {
     const id = randomUUID();
-    const newBudget: Budget = {
+    const now = new Date();
+    const newLimit: SpendingLimit = {
       id,
-      ...budget,
-      createdAt: new Date(),
+      ...limit,
+      createdAt: now,
+      updatedAt: now,
     };
-    this.budgets.set(id, newBudget);
-    return newBudget;
+    this.spendingLimits.set(id, newLimit);
+    return newLimit;
   }
 
-  async updateBudget(id: string, budget: Partial<InsertBudget>): Promise<Budget | undefined> {
-    const existing = this.budgets.get(id);
+  async updateSpendingLimit(id: string, limit: Partial<UpdateSpendingLimit>): Promise<SpendingLimit | undefined> {
+    const existing = this.spendingLimits.get(id);
     if (!existing) return undefined;
 
-    const updated = { ...existing, ...budget };
-    this.budgets.set(id, updated);
+    const updated = {
+      ...existing,
+      ...limit,
+      updatedAt: new Date(),
+    };
+    this.spendingLimits.set(id, updated);
     return updated;
   }
 
-  async deleteBudget(id: string): Promise<boolean> {
-    return this.budgets.delete(id);
+  async deleteSpendingLimit(id: string): Promise<boolean> {
+    return this.spendingLimits.delete(id);
   }
 
   // Expense operations
@@ -278,53 +284,25 @@ export class MemStorage implements IStorage {
   }
 
   // Analytics operations
-  async getBudgetSummary(month: number, year: number): Promise<BudgetSummary> {
-    // Get all budgets for the month/year and sum them
-    const budgets = Array.from(this.budgets.values()).filter(b => 
-      b.month === month && b.year === year
-    );
-    const monthlyBudget = budgets.reduce((sum, budget) => sum + parseFloat(budget.amount), 0);
+  async getSpendingSummary(): Promise<SpendingSummary> {
+    // Get current spending limit (simplified system)
+    const currentLimit = await this.getCurrentSpendingLimit();
+    const totalLimit = currentLimit ? parseFloat(currentLimit.amount) : 0;
 
-    // Get expenses for the month
-    const startOfMonth = new Date(year, month - 1, 1);
-    const endOfMonth = new Date(year, month, 0);
-    
-    const monthExpenses = Array.from(this.expenses.values()).filter(exp => {
-      const expDate = new Date(exp.date);
-      return expDate >= startOfMonth && expDate <= endOfMonth;
-    });
-
-    const totalExpenses = monthExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
-    const budgetRemaining = monthlyBudget - totalExpenses;
-    const expenseCount = monthExpenses.length;
-
-    // Calculate daily average
-    const now = new Date();
-    const currentDay = now.getFullYear() === year && now.getMonth() + 1 === month 
-      ? now.getDate() 
-      : endOfMonth.getDate();
-    
-    const dailyAverage = currentDay > 0 ? totalExpenses / currentDay : 0;
-    
-    // Calculate projected total
-    const daysInMonth = endOfMonth.getDate();
-    const projectedTotal = dailyAverage * daysInMonth;
-    
-    // Days left in month
-    const daysLeft = now.getFullYear() === year && now.getMonth() + 1 === month
-      ? daysInMonth - now.getDate()
-      : 0;
-
-    const percentageUsed = monthlyBudget > 0 ? (totalExpenses / monthlyBudget) * 100 : 0;
+    // Get all expenses
+    const allExpenses = Array.from(this.expenses.values());
+    const totalExpenses = allExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
+    const remainingAmount = totalLimit - totalExpenses;
+    const expenseCount = allExpenses.length;
+    const averageExpense = expenseCount > 0 ? totalExpenses / expenseCount : 0;
+    const percentageUsed = totalLimit > 0 ? (totalExpenses / totalLimit) * 100 : 0;
 
     return {
-      monthlyBudget,
+      totalLimit,
       totalExpenses,
-      budgetRemaining,
+      remainingAmount,
       expenseCount,
-      dailyAverage,
-      projectedTotal,
-      daysLeft,
+      averageExpense,
       percentageUsed,
     };
   }

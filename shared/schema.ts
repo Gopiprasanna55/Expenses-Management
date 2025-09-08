@@ -11,12 +11,12 @@ export const categories = pgTable("categories", {
   isActive: integer("is_active").notNull().default(1),
 });
 
-export const budgets = pgTable("budgets", {
+export const spendingLimits = pgTable("spending_limits", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  month: integer("month").notNull(), // 1-12
-  year: integer("year").notNull(),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  description: text("description"),
   createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
 export const expenses = pgTable("expenses", {
@@ -37,9 +37,14 @@ export const insertCategorySchema = createInsertSchema(categories).omit({
   isActive: true,
 });
 
-export const insertBudgetSchema = createInsertSchema(budgets).omit({
+export const insertSpendingLimitSchema = createInsertSchema(spendingLimits).omit({
   id: true,
   createdAt: true,
+  updatedAt: true,
+});
+
+export const updateSpendingLimitSchema = insertSpendingLimitSchema.partial().extend({
+  id: z.string(),
 });
 
 export const insertExpenseSchema = createInsertSchema(expenses).omit({
@@ -56,8 +61,9 @@ export const updateExpenseSchema = insertExpenseSchema.partial().extend({
 
 export type Category = typeof categories.$inferSelect;
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
-export type Budget = typeof budgets.$inferSelect;
-export type InsertBudget = z.infer<typeof insertBudgetSchema>;
+export type SpendingLimit = typeof spendingLimits.$inferSelect;
+export type InsertSpendingLimit = z.infer<typeof insertSpendingLimitSchema>;
+export type UpdateSpendingLimit = z.infer<typeof updateSpendingLimitSchema>;
 export type Expense = typeof expenses.$inferSelect;
 export type InsertExpense = z.infer<typeof insertExpenseSchema>;
 export type UpdateExpense = z.infer<typeof updateExpenseSchema>;
@@ -67,14 +73,12 @@ export type ExpenseWithCategory = Expense & {
   category: Category;
 };
 
-export type BudgetSummary = {
-  monthlyBudget: number;
+export type SpendingSummary = {
+  totalLimit: number;
   totalExpenses: number;
-  budgetRemaining: number;
+  remainingAmount: number;
   expenseCount: number;
-  dailyAverage: number;
-  projectedTotal: number;
-  daysLeft: number;
+  averageExpense: number;
   percentageUsed: number;
 };
 
