@@ -114,13 +114,16 @@ export default function Sidebar({ className }: SidebarProps) {
               <span>Export Data</span>
             </button>
             
-            <button
-              className="flex items-center space-x-3 px-4 py-3 rounded-lg text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors w-full"
-              data-testid="button-settings"
-            >
-              <Settings className="w-5 h-5" />
-              <span>Settings</span>
-            </button>
+            <Link href="/settings">
+              <button
+                className="flex items-center space-x-3 px-4 py-3 rounded-lg text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors w-full"
+                onClick={() => setIsMobileOpen(false)}
+                data-testid="button-settings"
+              >
+                <Settings className="w-5 h-5" />
+                <span>Settings</span>
+              </button>
+            </Link>
           </div>
         </nav>
       </div>

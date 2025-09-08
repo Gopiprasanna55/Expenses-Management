@@ -279,8 +279,11 @@ export class MemStorage implements IStorage {
 
   // Analytics operations
   async getBudgetSummary(month: number, year: number): Promise<BudgetSummary> {
-    const budget = await this.getBudgetByMonthYear(month, year);
-    const monthlyBudget = budget ? parseFloat(budget.amount) : 0;
+    // Get all budgets for the month/year and sum them
+    const budgets = Array.from(this.budgets.values()).filter(b => 
+      b.month === month && b.year === year
+    );
+    const monthlyBudget = budgets.reduce((sum, budget) => sum + parseFloat(budget.amount), 0);
 
     // Get expenses for the month
     const startOfMonth = new Date(year, month - 1, 1);
