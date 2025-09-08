@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertBudgetSchema, type InsertBudget } from "@shared/schema";
+import { insertBudgetSchema, type InsertBudget, type Budget } from "@shared/schema";
 import Sidebar from "@/components/Sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,7 +37,7 @@ export default function BudgetSetup() {
   });
 
   // Fetch budgets
-  const { data: budgets = [], isLoading } = useQuery({
+  const { data: budgets = [], isLoading } = useQuery<Budget[]>({
     queryKey: ["/api/budgets"],
   });
 
@@ -122,7 +122,7 @@ export default function BudgetSetup() {
     return `${MONTHS[month - 1]} ${year}`;
   };
 
-  const sortedBudgets = budgets.sort((a: any, b: any) => {
+  const sortedBudgets = budgets.sort((a, b) => {
     if (a.year !== b.year) return b.year - a.year;
     return b.month - a.month;
   });
@@ -302,7 +302,7 @@ export default function BudgetSetup() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {sortedBudgets.map((budget: any) => {
+                  {sortedBudgets.map((budget) => {
                     const isCurrentMonth = budget.month === currentMonth && budget.year === currentYear;
                     return (
                       <Card 

@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Search, Eye, Edit, Trash2, Paperclip, ChevronUp, ChevronDown } from "lucide-react";
-import type { ExpenseFilters, ExpenseSortBy, SortOrder } from "@shared/schema";
+import type { ExpenseFilters, ExpenseSortBy, SortOrder, Category } from "@shared/schema";
 import { formatCurrency } from "@/lib/utils";
 
 interface ExpenseTableProps {
@@ -28,7 +28,7 @@ export default function ExpenseTable({ showFilters = true, limit = 50, title = "
   const [currentPage, setCurrentPage] = useState(0);
 
   // Fetch categories for filter
-  const { data: categories = [] } = useQuery({
+  const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
   });
 
@@ -111,7 +111,7 @@ export default function ExpenseTable({ showFilters = true, limit = 50, title = "
   };
 
   const getCategoryColor = (categoryId: string) => {
-    const category = categories.find((cat: any) => cat.id === categoryId);
+    const category = categories.find((cat) => cat.id === categoryId);
     return category?.color || '#6b7280';
   };
 
@@ -156,7 +156,7 @@ export default function ExpenseTable({ showFilters = true, limit = 50, title = "
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">All Categories</SelectItem>
-                  {categories.map((category: any) => (
+                  {categories.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       {category.name}
                     </SelectItem>
