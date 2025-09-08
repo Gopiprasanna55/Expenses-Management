@@ -7,7 +7,7 @@ import Dashboard from "@/pages/Dashboard";
 import AddExpense from "@/pages/AddExpense";
 import AllExpenses from "@/pages/AllExpenses";
 import Categories from "@/pages/Categories";
-import BudgetSetup from "@/pages/BudgetSetup";
+import SpendingLimitSetup from "@/pages/SpendingLimitSetup";
 import Settings from "@/pages/Settings";
 import NotFound from "@/pages/not-found";
 
@@ -18,7 +18,7 @@ function Router() {
       <Route path="/add-expense" component={AddExpense} />
       <Route path="/expenses" component={AllExpenses} />
       <Route path="/categories" component={Categories} />
-      <Route path="/budget" component={BudgetSetup} />
+      <Route path="/budget" component={SpendingLimitSetup} />
       <Route path="/settings" component={Settings} />
       <Route component={NotFound} />
     </Switch>

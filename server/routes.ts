@@ -60,64 +60,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Budget routes
-  app.get("/api/budgets", async (req, res) => {
+  // Spending Limit routes
+  app.get("/api/spending-limits", async (req, res) => {
     try {
-      const budgets = await storage.getBudgets();
-      res.json(budgets);
+      const spendingLimits = await storage.getSpendingLimits();
+      res.json(spendingLimits);
     } catch (error) {
-      console.error("Error fetching budgets:", error);
-      res.status(500).json({ error: "Failed to fetch budgets" });
+      console.error("Error fetching spending limits:", error);
+      res.status(500).json({ error: "Failed to fetch spending limits" });
     }
   });
 
-  app.get("/api/budgets/:month/:year", async (req, res) => {
+  app.get("/api/current-spending-limit", async (req, res) => {
     try {
-      const month = parseInt(req.params.month);
-      const year = parseInt(req.params.year);
-      
-      if (isNaN(month) || isNaN(year) || month < 1 || month > 12) {
-        return res.status(400).json({ error: "Invalid month or year" });
+      const currentLimit = await storage.getCurrentSpendingLimit();
+      if (!currentLimit) {
+        return res.status(404).json({ error: "No spending limit found" });
       }
-      
-      const budget = await storage.getBudgetByMonthYear(month, year);
-      
-      if (!budget) {
-        return res.status(404).json({ error: "Budget not found" });
-      }
-      
-      res.json(budget);
+      res.json(currentLimit);
     } catch (error) {
-      console.error("Error fetching budget:", error);
-      res.status(500).json({ error: "Failed to fetch budget" });
+      console.error("Error fetching current spending limit:", error);
+      res.status(500).json({ error: "Failed to fetch current spending limit" });
     }
   });
 
-  app.post("/api/budgets", async (req, res) => {
+
+  app.post("/api/spending-limits", async (req, res) => {
     try {
-      const budgetData = insertBudgetSchema.parse(req.body);
-      const budget = await storage.createBudget(budgetData);
-      res.status(201).json(budget);
+      const limitData = insertSpendingLimitSchema.parse(req.body);
+      const spendingLimit = await storage.createSpendingLimit(limitData);
+      res.status(201).json(spendingLimit);
     } catch (error) {
-      console.error("Error creating budget:", error);
-      res.status(400).json({ error: "Failed to create budget" });
+      console.error("Error creating spending limit:", error);
+      res.status(400).json({ error: "Failed to create spending limit" });
     }
   });
 
-  app.put("/api/budgets/:id", async (req, res) => {
+  app.put("/api/spending-limits/:id", async (req, res) => {
     try {
       const { id } = req.params;
-      const budgetData = insertBudgetSchema.partial().parse(req.body);
-      const budget = await storage.updateBudget(id, budgetData);
+      const limitData = updateSpendingLimitSchema.parse(req.body);
+      const spendingLimit = await storage.updateSpendingLimit(id, limitData);
       
-      if (!budget) {
-        return res.status(404).json({ error: "Budget not found" });
+      if (!spendingLimit) {
+        return res.status(404).json({ error: "Spending limit not found" });
       }
       
-      res.json(budget);
+      res.json(spendingLimit);
     } catch (error) {
-      console.error("Error updating budget:", error);
-      res.status(400).json({ error: "Failed to update budget" });
+      console.error("Error updating spending limit:", error);
+      res.status(400).json({ error: "Failed to update spending limit" });
     }
   });
 
@@ -237,20 +229,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Analytics routes
-  app.get("/api/analytics/budget-summary/:month/:year", async (req, res) => {
+  app.get("/api/analytics/spending-summary", async (req, res) => {
     try {
-      const month = parseInt(req.params.month);
-      const year = parseInt(req.params.year);
-      
-      if (isNaN(month) || isNaN(year) || month < 1 || month > 12) {
-        return res.status(400).json({ error: "Invalid month or year" });
-      }
-      
-      const summary = await storage.getBudgetSummary(month, year);
+      const summary = await storage.getSpendingSummary();
       res.json(summary);
     } catch (error) {
-      console.error("Error fetching budget summary:", error);
-      res.status(500).json({ error: "Failed to fetch budget summary" });
+      console.error("Error fetching spending summary:", error);
+      res.status(500).json({ error: "Failed to fetch spending summary" });
     }
   });
 
