@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Eye, Edit, Trash2, Paperclip, ChevronUp, ChevronDown } from "lucide-react";
+import { Search, Eye, Edit, Trash2, Paperclip, ChevronUp, ChevronDown, Download } from "lucide-react";
 import type { ExpenseFilters, ExpenseSortBy, SortOrder, Category } from "@shared/schema";
 import { formatCurrency } from "@/lib/utils";
 
@@ -101,6 +101,24 @@ export default function ExpenseTable({ showFilters = true, limit = 50, title = "
     setCurrentPage(0);
   };
 
+  const handleExportCSV = () => {
+    const params = new URLSearchParams({
+      ...(filters.search && { search: filters.search }),
+      ...(filters.categoryId && { categoryId: filters.categoryId }),
+      ...(filters.startDate && { startDate: filters.startDate }),
+      ...(filters.endDate && { endDate: filters.endDate }),
+      ...(filters.minAmount !== undefined && { minAmount: filters.minAmount.toString() }),
+      ...(filters.maxAmount !== undefined && { maxAmount: filters.maxAmount.toString() }),
+    });
+    
+    window.open(`/api/export/csv?${params.toString()}`, '_blank');
+    
+    toast({
+      title: "Export Started",
+      description: "Your filtered expenses are being exported to CSV.",
+    });
+  };
+
   const expenses = expenseData?.expenses || [];
   const totalCount = expenseData?.totalCount || 0;
   const hasMore = expenseData?.hasMore || false;
@@ -138,7 +156,7 @@ export default function ExpenseTable({ showFilters = true, limit = 50, title = "
           <CardTitle data-testid="text-expenses-title">{title}</CardTitle>
           
           {showFilters && (
-            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 sm:items-center">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                 <Input
@@ -180,6 +198,16 @@ export default function ExpenseTable({ showFilters = true, limit = 50, title = "
                   data-testid="input-end-date"
                 />
               </div>
+              
+              <Button 
+                variant="outline" 
+                onClick={handleExportCSV}
+                className="whitespace-nowrap"
+                data-testid="button-export-filtered"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Export Filtered
+              </Button>
             </div>
           )}
         </div>
