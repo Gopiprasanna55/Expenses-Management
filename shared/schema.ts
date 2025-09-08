@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { sql, relations } from "drizzle-orm";
 import { pgTable, text, varchar, decimal, timestamp, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -103,3 +103,15 @@ export type ExpenseFilters = {
 
 export type ExpenseSortBy = 'date' | 'amount' | 'description' | 'category';
 export type SortOrder = 'asc' | 'desc';
+
+// Define relations
+export const categoriesRelations = relations(categories, ({ many }) => ({
+  expenses: many(expenses),
+}));
+
+export const expensesRelations = relations(expenses, ({ one }) => ({
+  category: one(categories, {
+    fields: [expenses.categoryId],
+    references: [categories.id],
+  }),
+}));
