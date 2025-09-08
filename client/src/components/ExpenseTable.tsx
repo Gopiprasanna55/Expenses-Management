@@ -6,16 +6,185 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { updateExpenseSchema } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Eye, Edit, Trash2, Paperclip, ChevronUp, ChevronDown, Download } from "lucide-react";
-import type { ExpenseFilters, ExpenseSortBy, SortOrder, Category } from "@shared/schema";
+import { Search, Eye, Edit, Trash2, Paperclip, ChevronUp, ChevronDown, Download, X } from "lucide-react";
+import type { ExpenseFilters, ExpenseSortBy, SortOrder, Category, UpdateExpense } from "@shared/schema";
 import { formatCurrency } from "@/lib/utils";
 
 interface ExpenseTableProps {
   showFilters?: boolean;
   limit?: number;
   title?: string;
+}
+
+interface EditExpenseFormInlineProps {
+  expense: any;
+  categories: Category[];
+  onSubmit: (data: Partial<UpdateExpense>) => void;
+  onCancel: () => void;
+  isLoading: boolean;
+}
+
+function EditExpenseFormInline({ expense, categories, onSubmit, onCancel, isLoading }: EditExpenseFormInlineProps) {
+  const form = useForm<Partial<UpdateExpense>>({
+    resolver: zodResolver(updateExpenseSchema.partial()),
+    defaultValues: {
+      description: expense.description,
+      amount: expense.amount,
+      categoryId: expense.categoryId,
+      vendor: expense.vendor || '',
+      date: new Date(expense.date).toISOString().split('T')[0],
+      notes: expense.notes || '',
+    },
+  });
+
+  const handleSubmit = (data: Partial<UpdateExpense>) => {
+    const submitData = {
+      ...data,
+      date: data.date ? new Date(data.date) : undefined,
+      amount: data.amount ? parseFloat(data.amount.toString()) : undefined,
+    };
+    onSubmit(submitData);
+  };
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Description</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter description" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="amount"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Amount (₹)</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  {...field}
+                  onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="categoryId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Category</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a category" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      <div className="flex items-center space-x-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: category.color }}
+                        />
+                        <span>{category.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="vendor"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Vendor (Optional)</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter vendor name" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="date"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Date</FormLabel>
+              <FormControl>
+                <Input
+                  type="date"
+                  {...field}
+                  value={field.value?.toString().split('T')[0] || ''}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="notes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Notes (Optional)</FormLabel>
+              <FormControl>
+                <Textarea placeholder="Add any additional notes..." {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="flex justify-end space-x-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            disabled={isLoading}
+          >
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? "Updating..." : "Update Expense"}
+          </Button>
+        </div>
+      </form>
+    </Form>
+  );
 }
 
 export default function ExpenseTable({ showFilters = true, limit = 50, title = "Expenses" }: ExpenseTableProps) {
@@ -26,6 +195,10 @@ export default function ExpenseTable({ showFilters = true, limit = 50, title = "
   const [sortBy, setSortBy] = useState<ExpenseSortBy>('date');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [currentPage, setCurrentPage] = useState(0);
+  const [viewExpense, setViewExpense] = useState<any>(null);
+  const [editExpense, setEditExpense] = useState<any>(null);
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   // Fetch categories for filter
   const { data: categories = [] } = useQuery<Category[]>({
@@ -78,6 +251,30 @@ export default function ExpenseTable({ showFilters = true, limit = 50, title = "
       toast({
         title: "Error",
         description: "Failed to delete expense",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Edit expense mutation
+  const editExpenseMutation = useMutation({
+    mutationFn: async (data: { id: string; expense: Partial<UpdateExpense> }) => {
+      await apiRequest("PUT", `/api/expenses/${data.id}`, data.expense);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/analytics"] });
+      setIsEditOpen(false);
+      setEditExpense(null);
+      toast({
+        title: "Success",
+        description: "Expense updated successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update expense",
         variant: "destructive",
       });
     },
@@ -150,6 +347,7 @@ export default function ExpenseTable({ showFilters = true, limit = 50, title = "
   };
 
   return (
+    <>
     <Card>
       <CardHeader>
         <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
@@ -323,8 +521,8 @@ export default function ExpenseTable({ showFilters = true, limit = 50, title = "
                           variant="ghost"
                           className="h-8 w-8 p-0"
                           onClick={() => {
-                            // Create a simple view modal or alert for now
-                            alert(`Expense Details:\n\nDescription: ${expense.description}\nAmount: ${formatCurrency(expense.amount)}\nCategory: ${expense.category.name}\nVendor: ${expense.vendor || 'N/A'}\nDate: ${formatDate(expense.date)}\nNotes: ${expense.notes || 'N/A'}`);
+                            setViewExpense(expense);
+                            setIsViewOpen(true);
                           }}
                           data-testid={`button-view-${expense.id}`}
                         >
@@ -335,8 +533,8 @@ export default function ExpenseTable({ showFilters = true, limit = 50, title = "
                           variant="ghost"
                           className="h-8 w-8 p-0"
                           onClick={() => {
-                            // For now, show edit functionality - could be expanded to actual edit modal
-                            alert(`Edit functionality would open for expense: ${expense.description}`);
+                            setEditExpense(expense);
+                            setIsEditOpen(true);
                           }}
                           data-testid={`button-edit-${expense.id}`}
                         >
@@ -400,5 +598,87 @@ export default function ExpenseTable({ showFilters = true, limit = 50, title = "
         )}
       </CardContent>
     </Card>
+
+    {/* View Expense Dialog */}
+    <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Expense Details</DialogTitle>
+        </DialogHeader>
+        {viewExpense && (
+          <div className="space-y-4">
+            <div>
+              <Label className="text-sm font-medium text-muted-foreground">Description</Label>
+              <p className="text-sm">{viewExpense.description}</p>
+            </div>
+            <div>
+              <Label className="text-sm font-medium text-muted-foreground">Amount</Label>
+              <p className="text-lg font-semibold">{formatCurrency(viewExpense.amount)}</p>
+            </div>
+            <div>
+              <Label className="text-sm font-medium text-muted-foreground">Category</Label>
+              <div className="flex items-center space-x-2">
+                <div 
+                  className="w-3 h-3 rounded-full" 
+                  style={{ backgroundColor: viewExpense.category.color }}
+                />
+                <p className="text-sm">{viewExpense.category.name}</p>
+              </div>
+            </div>
+            <div>
+              <Label className="text-sm font-medium text-muted-foreground">Vendor</Label>
+              <p className="text-sm">{viewExpense.vendor || 'N/A'}</p>
+            </div>
+            <div>
+              <Label className="text-sm font-medium text-muted-foreground">Date</Label>
+              <p className="text-sm">{formatDate(viewExpense.date)} at {formatTime(viewExpense.date)}</p>
+            </div>
+            {viewExpense.notes && (
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Notes</Label>
+                <p className="text-sm">{viewExpense.notes}</p>
+              </div>
+            )}
+            {viewExpense.receiptPath && (
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Receipt</Label>
+                <a
+                  href={viewExpense.receiptPath}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-primary hover:underline"
+                >
+                  View Receipt
+                </a>
+              </div>
+            )}
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+
+    {/* Edit Expense Dialog */}
+    <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit Expense</DialogTitle>
+        </DialogHeader>
+        {editExpense && (
+          <EditExpenseFormInline
+            expense={editExpense}
+            categories={categories}
+            onSubmit={(data: Partial<UpdateExpense>) => {
+              editExpenseMutation.mutate({ id: editExpense.id, expense: data });
+            }}
+            onCancel={() => {
+              setIsEditOpen(false);
+              setEditExpense(null);
+            }}
+            isLoading={editExpenseMutation.isPending}
+          />
+        )}
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
