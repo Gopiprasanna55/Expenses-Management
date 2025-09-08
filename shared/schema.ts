@@ -11,7 +11,7 @@ export const categories = pgTable("categories", {
   isActive: integer("is_active").notNull().default(1),
 });
 
-export const spendingLimits = pgTable("spending_limits", {
+export const expenseWallets = pgTable("expense_wallets", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   description: text("description"),
@@ -37,13 +37,13 @@ export const insertCategorySchema = createInsertSchema(categories).omit({
   isActive: true,
 });
 
-export const insertSpendingLimitSchema = createInsertSchema(spendingLimits).omit({
+export const insertExpenseWalletSchema = createInsertSchema(expenseWallets).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
 });
 
-export const updateSpendingLimitSchema = insertSpendingLimitSchema.partial().extend({
+export const updateExpenseWalletSchema = insertExpenseWalletSchema.partial().extend({
   id: z.string(),
 });
 
@@ -61,9 +61,9 @@ export const updateExpenseSchema = insertExpenseSchema.partial().extend({
 
 export type Category = typeof categories.$inferSelect;
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
-export type SpendingLimit = typeof spendingLimits.$inferSelect;
-export type InsertSpendingLimit = z.infer<typeof insertSpendingLimitSchema>;
-export type UpdateSpendingLimit = z.infer<typeof updateSpendingLimitSchema>;
+export type ExpenseWallet = typeof expenseWallets.$inferSelect;
+export type InsertExpenseWallet = z.infer<typeof insertExpenseWalletSchema>;
+export type UpdateExpenseWallet = z.infer<typeof updateExpenseWalletSchema>;
 export type Expense = typeof expenses.$inferSelect;
 export type InsertExpense = z.infer<typeof insertExpenseSchema>;
 export type UpdateExpense = z.infer<typeof updateExpenseSchema>;
@@ -73,8 +73,8 @@ export type ExpenseWithCategory = Expense & {
   category: Category;
 };
 
-export type SpendingSummary = {
-  totalLimit: number;
+export type WalletSummary = {
+  walletAmount: number;
   totalExpenses: number;
   remainingAmount: number;
   expenseCount: number;

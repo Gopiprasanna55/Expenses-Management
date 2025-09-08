@@ -1,4 +1,4 @@
-import { type Category, type InsertCategory, type SpendingLimit, type InsertSpendingLimit, type UpdateSpendingLimit, type Expense, type InsertExpense, type UpdateExpense, type ExpenseWithCategory, type SpendingSummary, type CategoryBreakdown, type ExpenseFilters, type ExpenseSortBy, type SortOrder } from "@shared/schema";
+import { type Category, type InsertCategory, type ExpenseWallet, type InsertExpenseWallet, type UpdateExpenseWallet, type Expense, type InsertExpense, type UpdateExpense, type ExpenseWithCategory, type WalletSummary, type CategoryBreakdown, type ExpenseFilters, type ExpenseSortBy, type SortOrder } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -10,11 +10,11 @@ export interface IStorage {
   deleteCategory(id: string): Promise<boolean>;
   
   // Spending Limit operations
-  getSpendingLimits(): Promise<SpendingLimit[]>;
-  getCurrentSpendingLimit(): Promise<SpendingLimit | undefined>;
-  createSpendingLimit(limit: InsertSpendingLimit): Promise<SpendingLimit>;
-  updateSpendingLimit(id: string, limit: Partial<UpdateSpendingLimit>): Promise<SpendingLimit | undefined>;
-  deleteSpendingLimit(id: string): Promise<boolean>;
+  getExpenseWallets(): Promise<ExpenseWallet[]>;
+  getCurrentExpenseWallet(): Promise<ExpenseWallet | undefined>;
+  createExpenseWallet(wallet: InsertExpenseWallet): Promise<ExpenseWallet>;
+  updateExpenseWallet(id: string, wallet: Partial<UpdateExpenseWallet>): Promise<ExpenseWallet | undefined>;
+  deleteExpenseWallet(id: string): Promise<boolean>;
   
   // Expense operations
   getExpenses(filters?: ExpenseFilters, sortBy?: ExpenseSortBy, sortOrder?: SortOrder, limit?: number, offset?: number): Promise<ExpenseWithCategory[]>;
@@ -25,19 +25,19 @@ export interface IStorage {
   getExpensesCount(filters?: ExpenseFilters): Promise<number>;
   
   // Analytics operations
-  getSpendingSummary(): Promise<SpendingSummary>;
+  getWalletSummary(): Promise<WalletSummary>;
   getCategoryBreakdown(month?: number, year?: number): Promise<CategoryBreakdown[]>;
   getExpenseTrends(days: number): Promise<{ date: string; amount: number }[]>;
 }
 
 export class MemStorage implements IStorage {
   private categories: Map<string, Category>;
-  private spendingLimits: Map<string, SpendingLimit>;
+  private expenseWallets: Map<string, ExpenseWallet>;
   private expenses: Map<string, Expense>;
 
   constructor() {
     this.categories = new Map();
-    this.spendingLimits = new Map();
+    this.expenseWallets = new Map();
     this.expenses = new Map();
     this.initializeDefaultData();
   }
@@ -61,13 +61,13 @@ export class MemStorage implements IStorage {
       });
     });
 
-    // Initialize default spending limit
+    // Initialize default expense wallet
     const now = new Date();
     const limitId = randomUUID();
-    this.spendingLimits.set(limitId, {
+    this.expenseWallets.set(limitId, {
       id: limitId,
       amount: "10000.00",
-      description: "Monthly spending allowance",
+      description: "Initial wallet amount",
       createdAt: now,
       updatedAt: now,
     });
@@ -112,45 +112,45 @@ export class MemStorage implements IStorage {
     return true;
   }
 
-  // Spending Limit operations
-  async getSpendingLimits(): Promise<SpendingLimit[]> {
-    return Array.from(this.spendingLimits.values());
+  // Expense Wallet operations
+  async getExpenseWallets(): Promise<ExpenseWallet[]> {
+    return Array.from(this.expenseWallets.values());
   }
 
-  async getCurrentSpendingLimit(): Promise<SpendingLimit | undefined> {
-    const limits = Array.from(this.spendingLimits.values());
+  async getCurrentExpenseWallet(): Promise<ExpenseWallet | undefined> {
+    const wallets = Array.from(this.expenseWallets.values());
     // For simplified system, return the most recent one
-    return limits.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())[0];
+    return wallets.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())[0];
   }
 
-  async createSpendingLimit(limit: InsertSpendingLimit): Promise<SpendingLimit> {
+  async createExpenseWallet(wallet: InsertExpenseWallet): Promise<ExpenseWallet> {
     const id = randomUUID();
     const now = new Date();
-    const newLimit: SpendingLimit = {
+    const newWallet: ExpenseWallet = {
       id,
-      ...limit,
+      ...wallet,
       createdAt: now,
       updatedAt: now,
     };
-    this.spendingLimits.set(id, newLimit);
-    return newLimit;
+    this.expenseWallets.set(id, newWallet);
+    return newWallet;
   }
 
-  async updateSpendingLimit(id: string, limit: Partial<UpdateSpendingLimit>): Promise<SpendingLimit | undefined> {
-    const existing = this.spendingLimits.get(id);
+  async updateExpenseWallet(id: string, wallet: Partial<UpdateExpenseWallet>): Promise<ExpenseWallet | undefined> {
+    const existing = this.expenseWallets.get(id);
     if (!existing) return undefined;
 
     const updated = {
       ...existing,
-      ...limit,
+      ...wallet,
       updatedAt: new Date(),
     };
-    this.spendingLimits.set(id, updated);
+    this.expenseWallets.set(id, updated);
     return updated;
   }
 
-  async deleteSpendingLimit(id: string): Promise<boolean> {
-    return this.spendingLimits.delete(id);
+  async deleteExpenseWallet(id: string): Promise<boolean> {
+    return this.expenseWallets.delete(id);
   }
 
   // Expense operations
@@ -284,21 +284,21 @@ export class MemStorage implements IStorage {
   }
 
   // Analytics operations
-  async getSpendingSummary(): Promise<SpendingSummary> {
-    // Get current spending limit (simplified system)
-    const currentLimit = await this.getCurrentSpendingLimit();
-    const totalLimit = currentLimit ? parseFloat(currentLimit.amount) : 0;
+  async getWalletSummary(): Promise<WalletSummary> {
+    // Get current expense wallet (simplified system)
+    const currentWallet = await this.getCurrentExpenseWallet();
+    const walletAmount = currentWallet ? parseFloat(currentWallet.amount) : 0;
 
     // Get all expenses
     const allExpenses = Array.from(this.expenses.values());
     const totalExpenses = allExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
-    const remainingAmount = totalLimit - totalExpenses;
+    const remainingAmount = walletAmount - totalExpenses;
     const expenseCount = allExpenses.length;
     const averageExpense = expenseCount > 0 ? totalExpenses / expenseCount : 0;
-    const percentageUsed = totalLimit > 0 ? (totalExpenses / totalLimit) * 100 : 0;
+    const percentageUsed = walletAmount > 0 ? (totalExpenses / walletAmount) * 100 : 0;
 
     return {
-      totalLimit,
+      walletAmount,
       totalExpenses,
       remainingAmount,
       expenseCount,

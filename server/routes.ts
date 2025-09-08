@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertCategorySchema, insertSpendingLimitSchema, updateSpendingLimitSchema, insertExpenseSchema, updateExpenseSchema } from "@shared/schema";
+import { insertCategorySchema, insertExpenseWalletSchema, updateExpenseWalletSchema, insertExpenseSchema, updateExpenseSchema } from "@shared/schema";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -60,56 +60,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Spending Limit routes
-  app.get("/api/spending-limits", async (req, res) => {
+  // Expense Wallet routes
+  app.get("/api/expense-wallets", async (req, res) => {
     try {
-      const spendingLimits = await storage.getSpendingLimits();
-      res.json(spendingLimits);
+      const expenseWallets = await storage.getExpenseWallets();
+      res.json(expenseWallets);
     } catch (error) {
-      console.error("Error fetching spending limits:", error);
-      res.status(500).json({ error: "Failed to fetch spending limits" });
+      console.error("Error fetching expense wallets:", error);
+      res.status(500).json({ error: "Failed to fetch expense wallets" });
     }
   });
 
-  app.get("/api/current-spending-limit", async (req, res) => {
+  app.get("/api/current-expense-wallet", async (req, res) => {
     try {
-      const currentLimit = await storage.getCurrentSpendingLimit();
-      if (!currentLimit) {
-        return res.status(404).json({ error: "No spending limit found" });
+      const currentWallet = await storage.getCurrentExpenseWallet();
+      if (!currentWallet) {
+        return res.status(404).json({ error: "No expense wallet found" });
       }
-      res.json(currentLimit);
+      res.json(currentWallet);
     } catch (error) {
-      console.error("Error fetching current spending limit:", error);
-      res.status(500).json({ error: "Failed to fetch current spending limit" });
+      console.error("Error fetching current expense wallet:", error);
+      res.status(500).json({ error: "Failed to fetch current expense wallet" });
     }
   });
 
 
-  app.post("/api/spending-limits", async (req, res) => {
+  app.post("/api/expense-wallets", async (req, res) => {
     try {
-      const limitData = insertSpendingLimitSchema.parse(req.body);
-      const spendingLimit = await storage.createSpendingLimit(limitData);
-      res.status(201).json(spendingLimit);
+      const walletData = insertExpenseWalletSchema.parse(req.body);
+      const expenseWallet = await storage.createExpenseWallet(walletData);
+      res.status(201).json(expenseWallet);
     } catch (error) {
-      console.error("Error creating spending limit:", error);
-      res.status(400).json({ error: "Failed to create spending limit" });
+      console.error("Error creating expense wallet:", error);
+      res.status(400).json({ error: "Failed to create expense wallet" });
     }
   });
 
-  app.put("/api/spending-limits/:id", async (req, res) => {
+  app.put("/api/expense-wallets/:id", async (req, res) => {
     try {
       const { id } = req.params;
-      const limitData = updateSpendingLimitSchema.parse(req.body);
-      const spendingLimit = await storage.updateSpendingLimit(id, limitData);
+      const walletData = updateExpenseWalletSchema.parse(req.body);
+      const expenseWallet = await storage.updateExpenseWallet(id, walletData);
       
-      if (!spendingLimit) {
-        return res.status(404).json({ error: "Spending limit not found" });
+      if (!expenseWallet) {
+        return res.status(404).json({ error: "Expense wallet not found" });
       }
       
-      res.json(spendingLimit);
+      res.json(expenseWallet);
     } catch (error) {
-      console.error("Error updating spending limit:", error);
-      res.status(400).json({ error: "Failed to update spending limit" });
+      console.error("Error updating expense wallet:", error);
+      res.status(400).json({ error: "Failed to update expense wallet" });
     }
   });
 
@@ -229,13 +229,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Analytics routes
-  app.get("/api/analytics/spending-summary", async (req, res) => {
+  app.get("/api/analytics/wallet-summary", async (req, res) => {
     try {
-      const summary = await storage.getSpendingSummary();
+      const summary = await storage.getWalletSummary();
       res.json(summary);
     } catch (error) {
-      console.error("Error fetching spending summary:", error);
-      res.status(500).json({ error: "Failed to fetch spending summary" });
+      console.error("Error fetching wallet summary:", error);
+      res.status(500).json({ error: "Failed to fetch wallet summary" });
     }
   });
 
