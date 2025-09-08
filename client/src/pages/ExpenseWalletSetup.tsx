@@ -37,16 +37,11 @@ export default function ExpenseWalletSetup() {
     queryKey: ["/api/expense-wallets"],
   });
 
-  // Create/Update expense wallet mutation
-  const createMutation = useMutation({
+  // Add expense wallet balance mutation
+  const addBalanceMutation = useMutation({
     mutationFn: async (data: InsertExpenseWallet) => {
-      if (currentWallet && !isEditing) {
-        // If there's already a current wallet and we're not editing, update it
-        return await apiRequest("PUT", `/api/expense-wallets/${currentWallet.id}`, data);
-      } else {
-        // Otherwise create a new one
-        return await apiRequest("POST", "/api/expense-wallets", data);
-      }
+      // Always create a new wallet entry to maintain records
+      return await apiRequest("POST", "/api/expense-wallets", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/current-expense-wallet"] });
@@ -55,7 +50,7 @@ export default function ExpenseWalletSetup() {
       
       toast({
         title: "Success!",
-        description: currentWallet ? "Expense wallet updated successfully" : "Expense wallet set successfully",
+        description: "Balance added to expense wallet successfully",
       });
       
       form.reset();
@@ -72,7 +67,7 @@ export default function ExpenseWalletSetup() {
   });
 
   const onSubmit = (values: InsertExpenseWallet) => {
-    createMutation.mutate(values);
+    addBalanceMutation.mutate(values);
   };
 
   const handleEdit = () => {
@@ -101,7 +96,7 @@ export default function ExpenseWalletSetup() {
               
               <div className="md:ml-0 ml-2">
                 <h2 className="text-2xl font-bold text-foreground" data-testid="text-page-title">Expense Wallet</h2>
-                <p className="text-muted-foreground">Set and manage your expense wallet balance</p>
+                <p className="text-muted-foreground">Add balance to your expense wallet</p>
               </div>
             </div>
           </div>
@@ -116,17 +111,8 @@ export default function ExpenseWalletSetup() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <Target className="w-5 h-5 text-primary" />
-                    <CardTitle>Current Expense Wallet Balance</CardTitle>
+                    <CardTitle>Total Wallet Balance</CardTitle>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleEdit}
-                    data-testid="button-edit-current-wallet"
-                  >
-                    <Edit className="w-4 h-4 mr-2" />
-                    Update
-                  </Button>
                 </div>
               </CardHeader>
               <CardContent>
@@ -150,16 +136,23 @@ export default function ExpenseWalletSetup() {
             </Card>
           )}
 
-          {/* Expense Wallet Form */}
-          {(!currentWallet || isEditing) && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Plus className="w-5 h-5" />
-                  <span>{currentWallet ? "Update Expense Wallet" : "Set Expense Wallet"}</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
+          {/* Add Balance Form */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center space-x-2">
+                <Plus className="w-5 h-5 text-primary" />
+                <CardTitle>{currentWallet ? "Add Balance to Wallet" : "Set Initial Wallet Balance"}</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-4">
+                <p className="text-sm text-muted-foreground">
+                  {currentWallet 
+                    ? "Add funds to your expense wallet. Each addition will be recorded for tracking purposes." 
+                    : "Set the initial balance for your expense wallet to get started."
+                  }
+                </p>
+              </div>
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                     <FormField
@@ -205,45 +198,30 @@ export default function ExpenseWalletSetup() {
                     <div className="flex space-x-3">
                       <Button 
                         type="submit" 
-                        disabled={createMutation.isPending}
+                        disabled={addBalanceMutation.isPending}
                         data-testid="button-save-wallet"
                       >
-                        {createMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                        {currentWallet ? "Update Wallet" : "Set Wallet"}
+                        {addBalanceMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                        {currentWallet ? "Add Balance" : "Set Initial Balance"}
                       </Button>
 
-                      {isEditing && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => {
-                            setIsEditing(false);
-                            form.reset();
-                          }}
-                          data-testid="button-cancel-edit"
-                        >
-                          Cancel
-                        </Button>
-                      )}
                     </div>
                   </form>
                 </Form>
-              </CardContent>
-            </Card>
-          )}
+            </CardContent>
+          </Card>
 
-          {/* History */}
-          {expenseWallets.length > 1 && (
+          {/* Balance Additions History */}
+          {expenseWallets.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>Previous Wallets</CardTitle>
+                <CardTitle>Balance Addition History</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   {expenseWallets
-                    .filter(wallet => wallet.id !== currentWallet?.id)
-                    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-                    .slice(0, 5) // Show only last 5
+                    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                    .slice(0, 10) // Show last 10 additions
                     .map((wallet) => (
                       <div
                         key={wallet.id}
@@ -265,7 +243,7 @@ export default function ExpenseWalletSetup() {
                         </div>
                         <div className="text-right">
                           <div className="text-sm text-muted-foreground">
-                            {new Date(wallet.updatedAt).toLocaleDateString()}
+                            {new Date(wallet.createdAt).toLocaleDateString()}
                           </div>
                         </div>
                       </div>

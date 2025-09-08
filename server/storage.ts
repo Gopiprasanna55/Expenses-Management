@@ -286,9 +286,9 @@ export class MemStorage implements IStorage {
 
   // Analytics operations
   async getWalletSummary(): Promise<WalletSummary> {
-    // Get current expense wallet (simplified system)
-    const currentWallet = await this.getCurrentExpenseWallet();
-    const walletAmount = currentWallet ? parseFloat(currentWallet.amount) : 0;
+    // Calculate total wallet amount from all wallet entries
+    const allWallets = Array.from(this.expenseWallets.values());
+    const walletAmount = allWallets.reduce((total, wallet) => total + parseFloat(wallet.amount), 0);
 
     // Get all expenses
     const allExpenses = Array.from(this.expenses.values());
@@ -309,9 +309,9 @@ export class MemStorage implements IStorage {
   }
 
   async getWalletSummaryForMonth(month: number, year: number): Promise<WalletSummary> {
-    // Get current expense wallet (simplified system)
-    const currentWallet = await this.getCurrentExpenseWallet();
-    const monthlyBudget = currentWallet ? parseFloat(currentWallet.amount) : 0;
+    // Calculate total wallet amount from all wallet entries
+    const allWallets = Array.from(this.expenseWallets.values());
+    const monthlyBudget = allWallets.reduce((total, wallet) => total + parseFloat(wallet.amount), 0);
 
     // Filter expenses for the specific month and year
     const startOfMonth = new Date(year, month - 1, 1);

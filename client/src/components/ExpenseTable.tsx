@@ -40,9 +40,9 @@ function EditExpenseFormInline({ expense, categories, onSubmit, onCancel, isLoad
       description: expense.description,
       amount: expense.amount,
       categoryId: expense.categoryId,
-      vendor: expense.vendor || '',
+      vendor: expense.vendor ?? '',
       date: new Date(expense.date).toISOString().split('T')[0],
-      notes: expense.notes || '',
+      notes: expense.notes ?? '',
     },
   });
 
@@ -50,7 +50,7 @@ function EditExpenseFormInline({ expense, categories, onSubmit, onCancel, isLoad
     const submitData = {
       ...data,
       date: data.date ? new Date(data.date) : undefined,
-      amount: data.amount ? parseFloat(data.amount.toString()) : undefined,
+      amount: data.amount?.toString(),
     };
     onSubmit(submitData);
   };
