@@ -488,7 +488,7 @@ export default function ExpenseTable({ showFilters = true, limit = 50, title = "
                         style={{ backgroundColor: `${getCategoryColor(expense.categoryId)}20`, color: getCategoryColor(expense.categoryId) }}
                         data-testid={`badge-category-${expense.id}`}
                       >
-                        {expense.category.name}
+                        {expense.category?.name || 'Unknown Category'}
                       </Badge>
                     </TableCell>
                     <TableCell>

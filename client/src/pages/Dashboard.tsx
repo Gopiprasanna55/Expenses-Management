@@ -90,7 +90,7 @@ export default function Dashboard() {
                   <div className="flex items-center justify-between">
                     <CardTitle>Monthly Expense Tracking</CardTitle>
                     <div className="text-sm text-muted-foreground" data-testid="text-budget-usage">
-                      {budgetSummary ? `${budgetSummary.percentageUsed.toFixed(1)}% of wallet used this month` : "Loading... "}
+                      {budgetSummary ? `${(budgetSummary.percentageUsed || 0).toFixed(1)}% of wallet used this month` : "Loading... "}
                     </div>
                   </div>
                 </CardHeader>
@@ -107,7 +107,7 @@ export default function Dashboard() {
                         <div className="w-full bg-muted rounded-full h-3">
                           <div 
                             className="h-3 rounded-full bg-gradient-to-r from-secondary to-primary transition-all duration-300"
-                            style={{ width: `${Math.min(budgetSummary.percentageUsed, 100)}%` }}
+                            style={{ width: `${Math.min(budgetSummary.percentageUsed || 0, 100)}%` }}
                             data-testid="progress-expense-bar"
                           />
                         </div>
