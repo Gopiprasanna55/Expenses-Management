@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Upload } from "lucide-react";
+import { Loader2, Upload, FileText, X } from "lucide-react";
 import type { UploadResult } from "@uppy/core";
 
 // Form input type (before schema transformation)
@@ -30,12 +30,15 @@ type ExpenseFormData = {
 interface ExpenseFormProps {
   onSuccess?: () => void;
   initialData?: Partial<ExpenseFormData>;
+  expenseId?: string; // For edit mode
 }
 
-export default function ExpenseForm({ onSuccess, initialData }: ExpenseFormProps) {
+export default function ExpenseForm({ onSuccess, initialData, expenseId }: ExpenseFormProps) {
+  const isEditMode = !!expenseId;
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [uploadedReceiptUrl, setUploadedReceiptUrl] = useState<string | null>(null);
+  const [uploadedReceiptUrl, setUploadedReceiptUrl] = useState<string | null>(initialData?.receiptPath || null);
+  const [uploadedReceipts, setUploadedReceipts] = useState<string[]>(initialData?.receiptPath ? [initialData.receiptPath] : []);
 
   const form = useForm<ExpenseFormData>({
     resolver: zodResolver(insertExpenseSchema),
@@ -55,10 +58,12 @@ export default function ExpenseForm({ onSuccess, initialData }: ExpenseFormProps
     queryKey: ["/api/categories"],
   });
 
-  // Create expense mutation
+  // Create/Update expense mutation
   const createExpenseMutation = useMutation({
     mutationFn: async (data: ExpenseFormData) => {
-      const response = await apiRequest("POST", "/api/expenses", data);
+      const method = isEditMode ? "PUT" : "POST";
+      const url = isEditMode ? `/api/expenses/${expenseId}` : "/api/expenses";
+      const response = await apiRequest(method, url, data);
       return response.json();
     },
     onSuccess: () => {
@@ -66,16 +71,17 @@ export default function ExpenseForm({ onSuccess, initialData }: ExpenseFormProps
       queryClient.invalidateQueries({ queryKey: ["/api/analytics"] });
       toast({
         title: "Success",
-        description: "Expense created successfully",
+        description: isEditMode ? "Expense updated successfully" : "Expense created successfully",
       });
       form.reset();
       setUploadedReceiptUrl(null);
+      setUploadedReceipts([]);
       onSuccess?.();
     },
     onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to create expense",
+        description: isEditMode ? "Failed to update expense" : "Failed to create expense",
         variant: "destructive",
       });
       console.error("Error creating expense:", error);
@@ -83,38 +89,37 @@ export default function ExpenseForm({ onSuccess, initialData }: ExpenseFormProps
   });
 
   const handleGetUploadParameters = async () => {
-    console.log('Getting upload parameters...');
     const response = await apiRequest("POST", "/api/objects/upload", {});
     const data = await response.json();
-    console.log('Upload parameters response:', data);
     return {
       method: "PUT" as const,
       url: data.uploadURL,
     };
   };
 
+  const removeReceipt = (receiptPath: string) => {
+    setUploadedReceipts(prev => prev.filter(path => path !== receiptPath));
+    if (receiptPath === form.getValues('receiptPath')) {
+      form.setValue('receiptPath', null);
+      setUploadedReceiptUrl(null);
+    }
+  };
+
   const handleUploadComplete = (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
-    console.log('Upload complete result:', result);
     if (result.successful && result.successful.length > 0) {
       const uploadUrl = result.successful[0].uploadURL;
-      console.log('Upload URL:', uploadUrl);
       if (uploadUrl) {
         setUploadedReceiptUrl(uploadUrl);
         
         // Extract the object path from the upload URL
         const url = new URL(uploadUrl);
-        console.log('URL pathname:', url.pathname);
         const pathParts = url.pathname.split('/');
-        console.log('Path parts:', pathParts);
         const bucketIndex = pathParts.findIndex(part => part === 'uploads');
-        console.log('Bucket index:', bucketIndex);
         if (bucketIndex !== -1) {
           const objectId = pathParts.slice(bucketIndex + 1).join('/');
           const receiptPath = `/objects/uploads/${objectId}`;
-          console.log('Setting receipt path:', receiptPath);
           form.setValue('receiptPath', receiptPath);
-        } else {
-          console.error('Could not find uploads in path:', pathParts);
+          setUploadedReceipts(prev => [...prev, receiptPath]);
         }
       }
       
@@ -245,7 +250,34 @@ export default function ExpenseForm({ onSuccess, initialData }: ExpenseFormProps
 
             <div>
               <Label>Receipt Upload</Label>
-              <div className="mt-2">
+              <div className="mt-2 space-y-3">
+                {/* Show uploaded receipts */}
+                {uploadedReceipts.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      {uploadedReceipts.length} receipt{uploadedReceipts.length !== 1 ? 's' : ''} uploaded
+                    </p>
+                    {uploadedReceipts.map((receiptPath, index) => (
+                      <div key={receiptPath} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border">
+                        <div className="flex items-center space-x-2">
+                          <FileText className="w-4 h-4 text-primary" />
+                          <span className="text-sm font-medium">Receipt {index + 1}</span>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeReceipt(receiptPath)}
+                          className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Upload button */}
                 <ObjectUploader
                   maxNumberOfFiles={1}
                   maxFileSize={10485760} // 10MB
@@ -257,7 +289,7 @@ export default function ExpenseForm({ onSuccess, initialData }: ExpenseFormProps
                     <Upload className="w-6 h-6 text-muted-foreground" />
                     <div className="text-center">
                       <p className="text-sm font-medium text-foreground">
-                        {uploadedReceiptUrl ? "Receipt Uploaded" : "Click to upload receipt"}
+                        {uploadedReceipts.length > 0 ? "Add another receipt" : "Click to upload receipt"}
                       </p>
                       <p className="text-xs text-muted-foreground">PNG, JPG, PDF up to 10MB</p>
                     </div>
@@ -293,6 +325,7 @@ export default function ExpenseForm({ onSuccess, initialData }: ExpenseFormProps
                 onClick={() => {
                   form.reset();
                   setUploadedReceiptUrl(null);
+                  setUploadedReceipts([]);
                 }}
                 data-testid="button-cancel"
               >
@@ -306,7 +339,7 @@ export default function ExpenseForm({ onSuccess, initialData }: ExpenseFormProps
                 {createExpenseMutation.isPending && (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 )}
-                Add Expense
+                {isEditMode ? "Update Expense" : "Add Expense"}
               </Button>
             </div>
           </form>
