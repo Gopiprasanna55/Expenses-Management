@@ -239,6 +239,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/analytics/budget-summary/:month/:year", async (req, res) => {
+    try {
+      const { month, year } = req.params;
+      const monthNum = parseInt(month);
+      const yearNum = parseInt(year);
+      
+      if (isNaN(monthNum) || isNaN(yearNum) || monthNum < 1 || monthNum > 12) {
+        return res.status(400).json({ error: "Invalid month or year parameter" });
+      }
+      
+      const summary = await storage.getWalletSummaryForMonth(monthNum, yearNum);
+      res.json(summary);
+    } catch (error) {
+      console.error("Error fetching budget summary:", error);
+      res.status(500).json({ error: "Failed to fetch budget summary" });
+    }
+  });
+
   app.get("/api/analytics/category-breakdown", async (req, res) => {
     try {
       const { month, year } = req.query;

@@ -26,6 +26,7 @@ export interface IStorage {
   
   // Analytics operations
   getWalletSummary(): Promise<WalletSummary>;
+  getWalletSummaryForMonth(month: number, year: number): Promise<WalletSummary>;
   getCategoryBreakdown(month?: number, year?: number): Promise<CategoryBreakdown[]>;
   getExpenseTrends(days: number): Promise<{ date: string; amount: number }[]>;
 }
@@ -304,6 +305,53 @@ export class MemStorage implements IStorage {
       expenseCount,
       averageExpense,
       percentageUsed,
+    };
+  }
+
+  async getWalletSummaryForMonth(month: number, year: number): Promise<WalletSummary> {
+    // Get current expense wallet (simplified system)
+    const currentWallet = await this.getCurrentExpenseWallet();
+    const monthlyBudget = currentWallet ? parseFloat(currentWallet.amount) : 0;
+
+    // Filter expenses for the specific month and year
+    const startOfMonth = new Date(year, month - 1, 1);
+    const endOfMonth = new Date(year, month, 0);
+    
+    let monthlyExpenses = Array.from(this.expenses.values()).filter(exp => {
+      const expDate = new Date(exp.date);
+      return expDate >= startOfMonth && expDate <= endOfMonth;
+    });
+
+    const totalExpenses = monthlyExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
+    const remainingAmount = monthlyBudget - totalExpenses;
+    const expenseCount = monthlyExpenses.length;
+    const averageExpense = expenseCount > 0 ? totalExpenses / expenseCount : 0;
+    const percentageUsed = monthlyBudget > 0 ? (totalExpenses / monthlyBudget) * 100 : 0;
+
+    // Calculate daily average for the month
+    const currentDate = new Date();
+    const daysInMonth = endOfMonth.getDate();
+    const isCurrentMonth = currentDate.getMonth() === month - 1 && currentDate.getFullYear() === year;
+    const daysPassed = isCurrentMonth ? currentDate.getDate() : daysInMonth;
+    const dailyAverage = daysPassed > 0 ? totalExpenses / daysPassed : 0;
+    
+    // Calculate projected total (if current month)
+    const projectedTotal = isCurrentMonth && daysPassed > 0 ? (dailyAverage * daysInMonth) : totalExpenses;
+    
+    // Calculate days left in month
+    const daysLeft = isCurrentMonth ? daysInMonth - currentDate.getDate() : 0;
+
+    return {
+      walletAmount: monthlyBudget,
+      monthlyBudget,
+      totalExpenses,
+      remainingAmount,
+      expenseCount,
+      averageExpense,
+      percentageUsed,
+      dailyAverage,
+      projectedTotal,
+      daysLeft,
     };
   }
 

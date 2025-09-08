@@ -80,6 +80,10 @@ export type WalletSummary = {
   expenseCount: number;
   averageExpense: number;
   percentageUsed: number;
+  monthlyBudget?: number;
+  dailyAverage?: number;
+  projectedTotal?: number;
+  daysLeft?: number;
 };
 
 export type CategoryBreakdown = Category & {
