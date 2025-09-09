@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "wouter";
 import { Plus, Download, Tags, Bell, User, Calendar } from "lucide-react";
+import ExcelImport from "@/components/ExcelImport";
 import { formatCurrency } from "@/lib/utils";
 
 export default function Dashboard() {
@@ -152,6 +153,8 @@ export default function Dashboard() {
                       Add New Expense
                     </Button>
                   </Link>
+                  
+                  <ExcelImport />
                   
                   <Button 
                     variant="secondary" 
