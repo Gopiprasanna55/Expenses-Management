@@ -390,7 +390,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(results);
     } catch (error) {
       console.error("Error importing Excel file:", error);
-      res.status(500).json({ error: "Failed to import Excel file", details: error.message });
+      res.status(500).json({ error: "Failed to import Excel file", details: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 

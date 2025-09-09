@@ -157,7 +157,7 @@ export async function importExpensesFromExcel(filePath: string) {
       } catch (error) {
         console.error(`Failed to import row ${i + 1}:`, error);
         importResults.failed++;
-        importResults.errors.push(`Row ${i + 1}: ${error.message}`);
+        importResults.errors.push(`Row ${i + 1}: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     }
 
