@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx';
+import XLSX from 'xlsx';
 import path from 'path';
 import { storage } from './storage';
 import { insertExpenseSchema, type Category } from '@shared/schema';
