@@ -3,6 +3,8 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertCategorySchema, insertExpenseWalletSchema, updateExpenseWalletSchema, insertExpenseSchema, updateExpenseSchema } from "@shared/schema";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
+import { importExpensesFromExcel } from "./excelImport";
+import path from "path";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Category routes
@@ -368,6 +370,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error getting upload URL:", error);
       res.status(500).json({ error: "Failed to get upload URL" });
+    }
+  });
+
+  // Excel import route
+  app.post("/api/expenses/import-excel", async (req, res) => {
+    try {
+      const { filePath } = req.body;
+      
+      if (!filePath) {
+        return res.status(400).json({ error: "File path is required" });
+      }
+
+      // Construct full path to the uploaded file
+      const fullPath = path.join(process.cwd(), filePath);
+      
+      const results = await importExpensesFromExcel(fullPath);
+      
+      res.json(results);
+    } catch (error) {
+      console.error("Error importing Excel file:", error);
+      res.status(500).json({ error: "Failed to import Excel file", details: error.message });
     }
   });
 
