@@ -80,7 +80,7 @@ export type UpdateExpense = z.infer<typeof updateExpenseSchema>;
 
 // Extended types for API responses
 export type ExpenseWithCategory = Expense & {
-  category: Category;
+  category: Category | null;
 };
 
 export type WalletSummary = {

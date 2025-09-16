@@ -1,7 +1,7 @@
 import { type Category, type InsertCategory, type ExpenseWallet, type InsertExpenseWallet, type UpdateExpenseWallet, type Expense, type InsertExpense, type UpdateExpense, type ExpenseWithCategory, type WalletSummary, type CategoryBreakdown, type ExpenseFilters, type ExpenseSortBy, type SortOrder, categories, expenseWallets, expenses } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from './db';
-import { eq, sql, desc, asc, and, gte, lte, like, isNotNull, count, sum } from 'drizzle-orm';
+import { eq, sql, desc, asc, and, gte, lte, lt, like, isNotNull, count, sum } from 'drizzle-orm';
 
 export interface IStorage {
   // Category operations
@@ -89,15 +89,22 @@ export class DatabaseStorage implements IStorage {
   async createExpenseWallet(wallet: InsertExpenseWallet): Promise<ExpenseWallet> {
     const [newWallet] = await db
       .insert(expenseWallets)
-      .values(wallet)
+      .values({
+        ...wallet,
+        amount: wallet.amount.toString()
+      })
       .returning();
     return newWallet;
   }
 
   async updateExpenseWallet(id: string, wallet: Partial<InsertExpenseWallet>): Promise<ExpenseWallet | undefined> {
+    const updateData: any = { ...wallet, updatedAt: new Date() };
+    if (updateData.amount !== undefined) {
+      updateData.amount = updateData.amount.toString();
+    }
     const [updated] = await db
       .update(expenseWallets)
-      .set({ ...wallet, updatedAt: new Date() })
+      .set(updateData)
       .where(eq(expenseWallets.id, id))
       .returning();
     return updated || undefined;
@@ -105,7 +112,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteExpenseWallet(id: string): Promise<boolean> {
     const result = await db.delete(expenseWallets).where(eq(expenseWallets.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   // Expense operations
@@ -116,7 +123,7 @@ export class DatabaseStorage implements IStorage {
     limit = 50,
     offset = 0
   ): Promise<ExpenseWithCategory[]> {
-    let query = db
+    const baseQuery = db
       .select({
         id: expenses.id,
         description: expenses.description,
@@ -164,10 +171,6 @@ export class DatabaseStorage implements IStorage {
       }
     }
 
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
-
     // Apply sorting
     const sortColumn = {
       date: expenses.date,
@@ -177,12 +180,20 @@ export class DatabaseStorage implements IStorage {
     }[sortBy];
 
     const orderFn = sortOrder === 'asc' ? asc : desc;
-    query = query.orderBy(orderFn(sortColumn));
 
-    // Apply pagination
-    query = query.limit(limit).offset(offset);
-
-    return await query;
+    // Build final query with all conditions
+    if (conditions.length > 0) {
+      return await baseQuery
+        .where(and(...conditions))
+        .orderBy(orderFn(sortColumn))
+        .limit(limit)
+        .offset(offset);
+    } else {
+      return await baseQuery
+        .orderBy(orderFn(sortColumn))
+        .limit(limit)
+        .offset(offset);
+    }
   }
 
   async getExpenseById(id: string): Promise<ExpenseWithCategory | undefined> {
@@ -215,15 +226,22 @@ export class DatabaseStorage implements IStorage {
   async createExpense(expense: InsertExpense): Promise<Expense> {
     const [newExpense] = await db
       .insert(expenses)
-      .values(expense)
+      .values({
+        ...expense,
+        amount: expense.amount.toString()
+      })
       .returning();
     return newExpense;
   }
 
   async updateExpense(id: string, expense: Partial<UpdateExpense>): Promise<Expense | undefined> {
+    const updateData: any = { ...expense, updatedAt: new Date() };
+    if (updateData.amount !== undefined && updateData.amount !== null) {
+      updateData.amount = updateData.amount.toString();
+    }
     const [updated] = await db
       .update(expenses)
-      .set({ ...expense, updatedAt: new Date() })
+      .set(updateData)
       .where(eq(expenses.id, id))
       .returning();
     return updated || undefined;
@@ -231,11 +249,11 @@ export class DatabaseStorage implements IStorage {
 
   async deleteExpense(id: string): Promise<boolean> {
     const result = await db.delete(expenses).where(eq(expenses.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async getExpensesCount(filters?: ExpenseFilters): Promise<number> {
-    let query = db.select({ count: count() }).from(expenses);
+    const baseQuery = db.select({ count: count() }).from(expenses);
 
     // Apply same filters as getExpenses
     const conditions = [];
@@ -261,11 +279,12 @@ export class DatabaseStorage implements IStorage {
     }
 
     if (conditions.length > 0) {
-      query = query.where(and(...conditions));
+      const [result] = await baseQuery.where(and(...conditions));
+      return result.count;
+    } else {
+      const [result] = await baseQuery;
+      return result.count;
     }
-
-    const [result] = await query;
-    return result.count;
   }
 
   // Analytics operations
@@ -320,7 +339,7 @@ export class DatabaseStorage implements IStorage {
 
     // Filter expenses for the specific month and year only
     const startOfMonth = new Date(year, month - 1, 1);
-    const endOfMonth = new Date(year, month, 0);
+    const nextMonthStart = new Date(year, month, 1);
     
     const [monthlyExpenseResult] = await db
       .select({ 
@@ -330,7 +349,7 @@ export class DatabaseStorage implements IStorage {
       .from(expenses)
       .where(and(
         gte(expenses.date, startOfMonth),
-        lte(expenses.date, endOfMonth)
+        lt(expenses.date, nextMonthStart)
       ));
 
     const monthlyExpenseAmount = parseFloat(monthlyExpenseResult.totalAmount || '0');
@@ -342,24 +361,26 @@ export class DatabaseStorage implements IStorage {
 
     // Calculate daily average for the month
     const currentDate = new Date();
-    const daysInMonth = endOfMonth.getDate();
+    const daysInMonth = new Date(year, month, 0).getDate();
     const isCurrentMonth = currentDate.getMonth() === month - 1 && currentDate.getFullYear() === year;
     
-    // For current month, use actual days passed; for past/future months use full month
-    let daysPassed = daysInMonth;
+    // For current month, use completed days only; for past/future months use full month
+    let daysPassedForAverage = daysInMonth;
     if (isCurrentMonth) {
-      // Use current date, but ensure we don't count future days
-      daysPassed = Math.min(currentDate.getDate(), daysInMonth);
+      // Use completed days only (current date - 1, but at least 1)
+      daysPassedForAverage = Math.max(currentDate.getDate() - 1, 1);
     }
     
-    // Calculate daily average (avoid division by zero)
-    const dailyAverage = daysPassed > 0 ? monthlyExpenseAmount / daysPassed : 0;
+    // Calculate daily average (avoid division by zero) and round to 2 decimals
+    const dailyAverage = daysPassedForAverage > 0 ? 
+      Math.round((monthlyExpenseAmount / daysPassedForAverage) * 100) / 100 : 0;
     
     // Calculate projected total
     let projectedTotal = monthlyExpenseAmount;
-    if (isCurrentMonth && daysPassed > 0 && daysPassed < daysInMonth) {
-      // Only project if we're in the current month and haven't reached the end
-      projectedTotal = dailyAverage * daysInMonth;
+    if (isCurrentMonth && currentDate.getDate() < daysInMonth) {
+      // For current month: current expenses + (remaining days × daily average)
+      const remainingDays = daysInMonth - currentDate.getDate();
+      projectedTotal = Math.round((monthlyExpenseAmount + (dailyAverage * remainingDays)) * 100) / 100;
     }
     
     // Calculate days left in month
