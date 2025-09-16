@@ -101,31 +101,7 @@ export default function ExpenseCharts({ month, year }: ExpenseChartsProps) {
     });
   };
 
-  // Custom label function to show percentage on pie slices
-  const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
-    const RADIAN = Math.PI / 180;
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-    const x = cx + radius * Math.cos(-midAngle * RADIAN);
-    const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-    // Only show label if percentage is above 3% to avoid cluttering
-    if (percent < 0.03) return null;
-
-    return (
-      <text 
-        x={x} 
-        y={y} 
-        fill="white" 
-        textAnchor={x > cx ? 'start' : 'end'} 
-        dominantBaseline="central"
-        fontSize="12"
-        fontWeight="600"
-        style={{ filter: 'drop-shadow(1px 1px 2px rgba(0,0,0,0.7))' }}
-      >
-        {`${(percent * 100).toFixed(1)}%`}
-      </text>
-    );
-  };
+  // Removed custom label function - no longer showing percentages on pie slices
 
   // Calculate total amount from trends data
   const totalAmount = trendsData?.reduce((sum: number, item: any) => sum + (parseFloat(item.amount) || 0), 0) || 0;
@@ -231,16 +207,11 @@ export default function ExpenseCharts({ month, year }: ExpenseChartsProps) {
 
       {/* Category Breakdown */}
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Category Breakdown</CardTitle>
-            <button className="text-sm text-primary hover:text-primary/80 transition-colors">
-              View All
-            </button>
-          </div>
+        <CardHeader className="pb-4">
+          <CardTitle>Category Breakdown</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-[300px]" data-testid="category-breakdown">
+          <div className="h-[280px]" data-testid="category-breakdown">
             {categoryLoading ? (
               <div className="flex items-center justify-center h-full">
                 <div className="flex items-center space-x-2">
@@ -257,8 +228,6 @@ export default function ExpenseCharts({ month, year }: ExpenseChartsProps) {
                     cy="50%"
                     outerRadius={100}
                     dataKey="value"
-                    labelLine={false}
-                    label={renderCustomLabel}
                     stroke="#fff"
                     strokeWidth={2}
                   >
@@ -268,27 +237,32 @@ export default function ExpenseCharts({ month, year }: ExpenseChartsProps) {
                   </Pie>
                   <Tooltip 
                     contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
+                      backgroundColor: "rgba(0, 0, 0, 0.9)",
+                      border: "1px solid rgba(255, 255, 255, 0.2)",
                       borderRadius: "8px",
-                      color: "hsl(var(--foreground))",
+                      color: "white",
+                      boxShadow: "0 8px 16px rgba(0, 0, 0, 0.3)",
+                      fontSize: "14px",
+                      fontWeight: "500",
                     }}
                     formatter={(value: number, name: string, props: any) => [
                       `${formatCurrency(value)} (${(props.payload.percentage || 0).toFixed(1)}%)`,
                       name
                     ]}
+                    labelStyle={{ color: "white", fontSize: "12px" }}
                   />
                   <Legend 
                     layout="vertical"
                     verticalAlign="middle"
                     align="right"
                     wrapperStyle={{
-                      fontSize: '12px',
-                      paddingLeft: '20px'
+                      fontSize: '11px',
+                      paddingLeft: '15px',
+                      lineHeight: '1.4'
                     }}
-                    formatter={(value: string) => (
-                      <span style={{ color: "hsl(var(--foreground))", fontSize: '12px' }}>
-                        {value}
+                    formatter={(value: string, entry: any) => (
+                      <span style={{ color: "hsl(var(--foreground))", fontSize: '11px' }}>
+                        {value} - {formatCurrency(entry.payload.value)}
                       </span>
                     )}
                   />
