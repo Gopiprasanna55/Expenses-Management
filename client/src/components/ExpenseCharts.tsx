@@ -235,33 +235,6 @@ export default function ExpenseCharts({ month, year }: ExpenseChartsProps) {
                       <Cell key={`cell-${index}`} fill={entry.fill} />
                     ))}
                   </Pie>
-                  <Tooltip 
-                    contentStyle={{
-                      backgroundColor: "rgba(0, 0, 0, 0.95)",
-                      border: "2px solid rgba(255, 255, 255, 0.3)",
-                      borderRadius: "12px",
-                      color: "white",
-                      boxShadow: "0 12px 24px rgba(0, 0, 0, 0.5)",
-                      fontSize: "15px",
-                      fontWeight: "600",
-                      padding: "12px 16px",
-                      minWidth: "180px",
-                      textAlign: "center",
-                    }}
-                    formatter={(value: number, name: string, props: any) => [
-                      `${formatCurrency(value)} (${(props.payload.percentage || 0).toFixed(1)}%)`,
-                      name
-                    ]}
-                    labelStyle={{ 
-                      color: "white", 
-                      fontSize: "14px", 
-                      fontWeight: "600",
-                      marginBottom: "4px",
-                      display: "block"
-                    }}
-                    cursor={{ fill: "rgba(255, 255, 255, 0.1)" }}
-                    animationDuration={200}
-                  />
                   <Legend 
                     layout="vertical"
                     verticalAlign="middle"
