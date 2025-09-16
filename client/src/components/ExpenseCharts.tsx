@@ -52,6 +52,7 @@ export default function ExpenseCharts({ month, year }: ExpenseChartsProps) {
   const formatTrendData = (data: any[]) => {
     return data.map(item => ({
       ...item,
+      amount: Number(item.amount) || 0,
       date: new Date(item.date).toLocaleDateString('en-US', { 
         month: 'short',
         day: 'numeric' 
@@ -126,6 +127,9 @@ export default function ExpenseCharts({ month, year }: ExpenseChartsProps) {
     );
   };
 
+  // Calculate total amount from trends data
+  const totalAmount = trendsData?.reduce((sum: number, item: any) => sum + (parseFloat(item.amount) || 0), 0) || 0;
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Expense Trends Chart */}
@@ -146,6 +150,17 @@ export default function ExpenseCharts({ month, year }: ExpenseChartsProps) {
           </div>
         </CardHeader>
         <CardContent>
+          {/* Total Amount Display */}
+          {trendsData && trendsData.length > 0 && (
+            <div className="mb-6 text-center">
+              <div className="text-3xl font-bold text-primary" data-testid="text-total-amount">
+                {formatCurrency(totalAmount)}
+              </div>
+              <div className="text-sm text-muted-foreground mt-1">
+                Total for {getDaysLabel(trendDays)}
+              </div>
+            </div>
+          )}
           <div className="h-[300px]" data-testid="chart-expense-trends">
             {trendsLoading ? (
               <div className="flex items-center justify-center h-full">
@@ -156,16 +171,27 @@ export default function ExpenseCharts({ month, year }: ExpenseChartsProps) {
               </div>
             ) : trendsData && trendsData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={formatTrendData(trendsData)}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <BarChart 
+                  data={formatTrendData(trendsData)}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid 
+                    strokeDasharray="2 2" 
+                    stroke="hsl(var(--border))" 
+                    vertical={false}
+                  />
                   <XAxis 
                     dataKey="date" 
                     stroke="hsl(var(--muted-foreground))"
-                    fontSize={12}
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
                   />
                   <YAxis 
                     stroke="hsl(var(--muted-foreground))"
-                    fontSize={12}
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
                     tickFormatter={(value) => formatCurrency(value)}
                   />
                   <Tooltip 
@@ -174,13 +200,16 @@ export default function ExpenseCharts({ month, year }: ExpenseChartsProps) {
                       border: "1px solid hsl(var(--border))",
                       borderRadius: "8px",
                       color: "hsl(var(--foreground))",
+                      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
                     }}
                     formatter={(value: number) => [formatCurrency(value), "Amount"]}
+                    cursor={{ fill: 'hsl(var(--primary) / 0.1)' }}
                   />
                   <Bar
                     dataKey="amount"
                     fill="hsl(var(--primary))"
-                    radius={[2, 2, 0, 0]}
+                    radius={[4, 4, 0, 0]}
+                    maxBarSize={60}
                   />
                 </BarChart>
               </ResponsiveContainer>
