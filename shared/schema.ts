@@ -15,6 +15,7 @@ export const expenseWallets = pgTable("expense_wallets", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   description: text("description"),
+  date: timestamp("date").notNull(),
   createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: timestamp("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
@@ -49,6 +50,7 @@ export const insertExpenseWalletSchema = createInsertSchema(expenseWallets).omit
     }
     return numVal;
   }),
+  date: z.string().transform((val) => new Date(val)),
 });
 
 export const updateExpenseWalletSchema = insertExpenseWalletSchema.partial().extend({

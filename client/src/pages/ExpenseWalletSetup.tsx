@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Plus, Loader2, Target, Edit } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,11 +21,13 @@ export default function ExpenseWalletSetup() {
   const [isEditing, setIsEditing] = useState(false);
   const [editingWallet, setEditingWallet] = useState<ExpenseWallet | null>(null);
 
+  const currentDate = new Date();
   const form = useForm({
     resolver: zodResolver(insertExpenseWalletSchema),
     defaultValues: {
-      amount: "0",
+      amount: "",
       description: "",
+      date: currentDate.toISOString().split('T')[0], // YYYY-MM-DD format
     },
   });
 
@@ -108,6 +111,7 @@ export default function ExpenseWalletSetup() {
     setEditingWallet(wallet);
     form.setValue("amount", String(wallet.amount));
     form.setValue("description", wallet.description || "");
+    form.setValue("date", new Date(wallet.date).toISOString().split('T')[0]);
     setIsEditing(true);
   };
 
@@ -121,6 +125,7 @@ export default function ExpenseWalletSetup() {
     if (currentWallet) {
       form.setValue("amount", String(currentWallet.amount));
       form.setValue("description", currentWallet.description || "");
+      form.setValue("date", new Date(currentWallet.date).toISOString().split('T')[0]);
       setIsEditing(true);
     }
   };
@@ -224,6 +229,24 @@ export default function ExpenseWalletSetup() {
 
                     <FormField
                       control={form.control}
+                      name="date"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Effective Date</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="date"
+                              {...field}
+                              data-testid="input-wallet-date"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
                       name="description"
                       render={({ field }) => (
                         <FormItem>
@@ -310,7 +333,10 @@ export default function ExpenseWalletSetup() {
                           </Button>
                           <div className="text-right">
                             <div className="text-sm text-muted-foreground">
-                              {new Date(wallet.createdAt).toLocaleDateString()}
+                              {new Date(wallet.date).toLocaleDateString()}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              Added: {new Date(wallet.createdAt).toLocaleDateString()}
                             </div>
                           </div>
                         </div>
