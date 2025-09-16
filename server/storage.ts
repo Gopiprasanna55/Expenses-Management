@@ -344,11 +344,23 @@ export class DatabaseStorage implements IStorage {
     const currentDate = new Date();
     const daysInMonth = endOfMonth.getDate();
     const isCurrentMonth = currentDate.getMonth() === month - 1 && currentDate.getFullYear() === year;
-    const daysPassed = isCurrentMonth ? currentDate.getDate() : daysInMonth;
+    
+    // For current month, use actual days passed; for past/future months use full month
+    let daysPassed = daysInMonth;
+    if (isCurrentMonth) {
+      // Use current date, but ensure we don't count future days
+      daysPassed = Math.min(currentDate.getDate(), daysInMonth);
+    }
+    
+    // Calculate daily average (avoid division by zero)
     const dailyAverage = daysPassed > 0 ? monthlyExpenseAmount / daysPassed : 0;
     
-    // Calculate projected total (if current month)
-    const projectedTotal = isCurrentMonth && daysPassed > 0 ? (dailyAverage * daysInMonth) : monthlyExpenseAmount;
+    // Calculate projected total
+    let projectedTotal = monthlyExpenseAmount;
+    if (isCurrentMonth && daysPassed > 0 && daysPassed < daysInMonth) {
+      // Only project if we're in the current month and haven't reached the end
+      projectedTotal = dailyAverage * daysInMonth;
+    }
     
     // Calculate days left in month
     const currentYear = currentDate.getFullYear();
