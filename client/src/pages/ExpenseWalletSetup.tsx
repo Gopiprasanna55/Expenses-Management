@@ -20,10 +20,10 @@ export default function ExpenseWalletSetup() {
   const [isEditing, setIsEditing] = useState(false);
   const [editingWallet, setEditingWallet] = useState<ExpenseWallet | null>(null);
 
-  const form = useForm<InsertExpenseWallet>({
+  const form = useForm({
     resolver: zodResolver(insertExpenseWalletSchema),
     defaultValues: {
-      amount: "",
+      amount: "0",
       description: "",
     },
   });
@@ -96,7 +96,7 @@ export default function ExpenseWalletSetup() {
     },
   });
 
-  const onSubmit = (values: InsertExpenseWallet) => {
+  const onSubmit = (values: any) => {
     if (editingWallet) {
       updateWalletMutation.mutate({ id: editingWallet.id, wallet: values });
     } else {
@@ -106,7 +106,7 @@ export default function ExpenseWalletSetup() {
 
   const handleEditWalletEntry = (wallet: ExpenseWallet) => {
     setEditingWallet(wallet);
-    form.setValue("amount", wallet.amount);
+    form.setValue("amount", String(wallet.amount));
     form.setValue("description", wallet.description || "");
     setIsEditing(true);
   };
@@ -119,7 +119,7 @@ export default function ExpenseWalletSetup() {
 
   const handleEdit = () => {
     if (currentWallet) {
-      form.setValue("amount", currentWallet.amount);
+      form.setValue("amount", String(currentWallet.amount));
       form.setValue("description", currentWallet.description || "");
       setIsEditing(true);
     }

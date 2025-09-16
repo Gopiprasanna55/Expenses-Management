@@ -41,6 +41,14 @@ export const insertExpenseWalletSchema = createInsertSchema(expenseWallets).omit
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  amount: z.union([z.string(), z.number()]).transform((val) => {
+    const numVal = typeof val === 'string' ? parseFloat(val) : val;
+    if (isNaN(numVal) || numVal <= 0) {
+      throw new Error('Amount must be a positive number');
+    }
+    return numVal;
+  }),
 });
 
 export const updateExpenseWalletSchema = insertExpenseWalletSchema.partial().extend({
