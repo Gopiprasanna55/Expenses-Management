@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 import { useState } from "react";
 import { formatCurrency } from "@/lib/utils";
 
@@ -68,6 +68,28 @@ export default function ExpenseCharts({ month, year }: ExpenseChartsProps) {
     }
   };
 
+  // Colors for pie chart
+  const COLORS = [
+    "hsl(var(--primary))",
+    "hsl(var(--secondary))",
+    "#8884d8",
+    "#82ca9d",
+    "#ffc658",
+    "#ff7300",
+    "#8dd1e1",
+    "#d084d0",
+    "#ffb347",
+    "#c0c0c0",
+  ];
+
+  const formatPieData = (data: any[]) => {
+    return data.map((item, index) => ({
+      ...item,
+      value: parseFloat(item.totalAmount),
+      fill: COLORS[index % COLORS.length],
+    }));
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Expense Trends Chart */}
@@ -98,7 +120,7 @@ export default function ExpenseCharts({ month, year }: ExpenseChartsProps) {
               </div>
             ) : trendsData && trendsData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={formatTrendData(trendsData)}>
+                <BarChart data={formatTrendData(trendsData)}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis 
                     dataKey="date" 
@@ -119,15 +141,12 @@ export default function ExpenseCharts({ month, year }: ExpenseChartsProps) {
                     }}
                     formatter={(value: number) => [formatCurrency(value), "Amount"]}
                   />
-                  <Line
-                    type="monotone"
+                  <Bar
                     dataKey="amount"
-                    stroke="hsl(var(--primary))"
-                    strokeWidth={2}
-                    dot={{ fill: "hsl(var(--primary))", strokeWidth: 2, r: 4 }}
-                    activeDot={{ r: 6, stroke: "hsl(var(--primary))", strokeWidth: 2 }}
+                    fill="hsl(var(--primary))"
+                    radius={[2, 2, 0, 0]}
                   />
-                </LineChart>
+                </BarChart>
               </ResponsiveContainer>
             ) : (
               <div className="flex items-center justify-center h-full">
@@ -153,49 +172,54 @@ export default function ExpenseCharts({ month, year }: ExpenseChartsProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4" data-testid="category-breakdown">
+          <div className="h-[300px]" data-testid="category-breakdown">
             {categoryLoading ? (
-              <div className="space-y-3">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="flex items-center justify-between animate-pulse">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-3 h-3 bg-muted rounded-full" />
-                      <div className="w-24 h-4 bg-muted rounded" />
-                    </div>
-                    <div className="text-right">
-                      <div className="w-16 h-4 bg-muted rounded mb-1" />
-                      <div className="w-8 h-3 bg-muted rounded" />
-                    </div>
-                  </div>
-                ))}
+              <div className="flex items-center justify-center h-full">
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  <span className="text-muted-foreground">Loading chart...</span>
+                </div>
               </div>
             ) : categoryData && categoryData.length > 0 ? (
-              categoryData.slice(0, 6).map((category: any) => (
-                <div key={category.id} className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div 
-                      className="w-3 h-3 rounded-full" 
-                      style={{ backgroundColor: category.color }}
-                    />
-                    <span className="font-medium text-foreground" data-testid={`text-category-${category.id}`}>
-                      {category.name}
-                    </span>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-bold text-foreground" data-testid={`text-amount-${category.id}`}>
-                      {formatCurrency(category.totalAmount)}
-                    </div>
-                    <div className="text-xs text-muted-foreground" data-testid={`text-percentage-${category.id}`}>
-                      {category.percentage.toFixed(1)}%
-                    </div>
-                  </div>
-                </div>
-              ))
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={formatPieData(categoryData)}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={90}
+                    dataKey="value"
+                    label={(entry) => `${entry.name}: ${formatCurrency(entry.value)}`}
+                  >
+                    {formatPieData(categoryData).map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
+                      color: "hsl(var(--foreground))",
+                    }}
+                    formatter={(value: number) => [formatCurrency(value), "Amount"]}
+                  />
+                  <Legend 
+                    formatter={(value, entry) => (
+                      <span style={{ color: "hsl(var(--foreground))" }}>
+                        {value}
+                      </span>
+                    )}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
             ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <div className="text-4xl mb-2">📊</div>
-                <p>No category data available</p>
-                <p className="text-xs">Add some expenses to see breakdown</p>
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center text-muted-foreground">
+                  <div className="text-4xl mb-2">📊</div>
+                  <p>No category data available</p>
+                  <p className="text-xs">Add some expenses to see breakdown</p>
+                </div>
               </div>
             )}
           </div>
