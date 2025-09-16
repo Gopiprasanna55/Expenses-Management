@@ -68,26 +68,62 @@ export default function ExpenseCharts({ month, year }: ExpenseChartsProps) {
     }
   };
 
-  // Colors for pie chart
+  // Colors for pie chart - distinct colors like the reference image
   const COLORS = [
-    "hsl(var(--primary))",
-    "hsl(var(--secondary))",
-    "#8884d8",
-    "#82ca9d",
-    "#ffc658",
-    "#ff7300",
-    "#8dd1e1",
-    "#d084d0",
-    "#ffb347",
-    "#c0c0c0",
+    "#3B82F6", // Blue
+    "#8B5CF6", // Purple  
+    "#A855F7", // Violet
+    "#EC4899", // Pink
+    "#EF4444", // Red
+    "#F97316", // Orange
+    "#EAB308", // Yellow
+    "#84CC16", // Lime
+    "#22C55E", // Green
+    "#10B981", // Emerald
+    "#06B6D4", // Cyan
+    "#0EA5E9", // Sky blue
+    "#6366F1", // Indigo
+    "#8B5A2B", // Brown
+    "#6B7280", // Gray
   ];
 
   const formatPieData = (data: any[]) => {
-    return data.map((item, index) => ({
-      ...item,
-      value: parseFloat(item.totalAmount),
-      fill: COLORS[index % COLORS.length],
-    }));
+    const total = data.reduce((sum, item) => sum + parseFloat(item.totalAmount), 0);
+    return data.map((item, index) => {
+      const value = parseFloat(item.totalAmount);
+      return {
+        ...item,
+        value,
+        percentage: (value / total) * 100,
+        fill: COLORS[index % COLORS.length],
+      };
+    });
+  };
+
+  // Custom label function to show percentage on pie slices
+  const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+    const RADIAN = Math.PI / 180;
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    // Only show label if percentage is above 3% to avoid cluttering
+    if (percent < 0.03) return null;
+
+    return (
+      <text 
+        x={x} 
+        y={y} 
+        fill="white" 
+        textAnchor={x > cx ? 'start' : 'end'} 
+        dominantBaseline="central"
+        fontSize="12"
+        fontWeight="600"
+        style={{ filter: 'drop-shadow(1px 1px 2px rgba(0,0,0,0.7))' }}
+      >
+        {`${(percent * 100).toFixed(1)}%`}
+      </text>
+    );
   };
 
   return (
@@ -185,11 +221,14 @@ export default function ExpenseCharts({ month, year }: ExpenseChartsProps) {
                 <PieChart>
                   <Pie
                     data={formatPieData(categoryData)}
-                    cx="50%"
+                    cx="45%"
                     cy="50%"
-                    outerRadius={90}
+                    outerRadius={100}
                     dataKey="value"
-                    label={(entry) => `${entry.name}: ${formatCurrency(entry.value)}`}
+                    labelLine={false}
+                    label={renderCustomLabel}
+                    stroke="#fff"
+                    strokeWidth={2}
                   >
                     {formatPieData(categoryData).map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.fill} />
@@ -202,11 +241,21 @@ export default function ExpenseCharts({ month, year }: ExpenseChartsProps) {
                       borderRadius: "8px",
                       color: "hsl(var(--foreground))",
                     }}
-                    formatter={(value: number) => [formatCurrency(value), "Amount"]}
+                    formatter={(value: number, name: string, props: any) => [
+                      `${formatCurrency(value)} (${(props.payload.percentage || 0).toFixed(1)}%)`,
+                      name
+                    ]}
                   />
                   <Legend 
-                    formatter={(value, entry) => (
-                      <span style={{ color: "hsl(var(--foreground))" }}>
+                    layout="vertical"
+                    verticalAlign="middle"
+                    align="right"
+                    wrapperStyle={{
+                      fontSize: '12px',
+                      paddingLeft: '20px'
+                    }}
+                    formatter={(value: string) => (
+                      <span style={{ color: "hsl(var(--foreground))", fontSize: '12px' }}>
                         {value}
                       </span>
                     )}
