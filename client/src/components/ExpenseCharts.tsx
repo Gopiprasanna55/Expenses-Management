@@ -11,13 +11,13 @@ interface ExpenseChartsProps {
 }
 
 export default function ExpenseCharts({ month, year }: ExpenseChartsProps) {
-  const [trendDays, setTrendDays] = useState("7");
+  const [trendMonths, setTrendMonths] = useState("6");
 
-  // Fetch expense trends
+  // Fetch monthly expense trends
   const { data: trendsData, isLoading: trendsLoading } = useQuery({
-    queryKey: ["/api/analytics/expense-trends", trendDays],
+    queryKey: ["/api/analytics/expense-trends-monthly", trendMonths],
     queryFn: async () => {
-      const response = await fetch(`/api/analytics/expense-trends/${trendDays}`, {
+      const response = await fetch(`/api/analytics/expense-trends-monthly/${trendMonths}`, {
         credentials: "include",
       });
       
@@ -53,19 +53,19 @@ export default function ExpenseCharts({ month, year }: ExpenseChartsProps) {
     return data.map(item => ({
       ...item,
       amount: Number(item.amount) || 0,
-      date: new Date(item.date).toLocaleDateString('en-US', { 
+      month: item.month ? new Date(item.month + '-01').toLocaleDateString('en-US', { 
         month: 'short',
-        day: 'numeric' 
-      }),
+        year: 'numeric' 
+      }) : item.date,
     }));
   };
 
-  const getDaysLabel = (days: string) => {
-    switch (days) {
-      case "7": return "Last 7 days";
-      case "30": return "Last 30 days";
-      case "90": return "Last 3 months";
-      default: return "Last 7 days";
+  const getMonthsLabel = (months: string) => {
+    switch (months) {
+      case "3": return "Last 3 months";
+      case "6": return "Last 6 months";
+      case "12": return "Last 12 months";
+      default: return "Last 6 months";
     }
   };
 
@@ -136,15 +136,15 @@ export default function ExpenseCharts({ month, year }: ExpenseChartsProps) {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Expense Trends</CardTitle>
-            <Select value={trendDays} onValueChange={setTrendDays}>
+            <CardTitle>Monthly Expense Trends</CardTitle>
+            <Select value={trendMonths} onValueChange={setTrendMonths}>
               <SelectTrigger className="w-40" data-testid="select-trend-period">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="7">Last 7 days</SelectItem>
-                <SelectItem value="30">Last 30 days</SelectItem>
-                <SelectItem value="90">Last 3 months</SelectItem>
+                <SelectItem value="3">Last 3 months</SelectItem>
+                <SelectItem value="6">Last 6 months</SelectItem>
+                <SelectItem value="12">Last 12 months</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -157,7 +157,7 @@ export default function ExpenseCharts({ month, year }: ExpenseChartsProps) {
                 {formatCurrency(totalAmount)}
               </div>
               <div className="text-sm text-muted-foreground mt-1">
-                Total for {getDaysLabel(trendDays)}
+                Total for {getMonthsLabel(trendMonths)}
               </div>
             </div>
           )}
@@ -181,7 +181,7 @@ export default function ExpenseCharts({ month, year }: ExpenseChartsProps) {
                     vertical={false}
                   />
                   <XAxis 
-                    dataKey="date" 
+                    dataKey="month" 
                     stroke="hsl(var(--muted-foreground))"
                     fontSize={11}
                     tickLine={false}
@@ -196,18 +196,21 @@ export default function ExpenseCharts({ month, year }: ExpenseChartsProps) {
                   />
                   <Tooltip 
                     contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
+                      backgroundColor: "rgba(0, 0, 0, 0.9)",
+                      border: "1px solid rgba(255, 255, 255, 0.2)",
                       borderRadius: "8px",
-                      color: "hsl(var(--foreground))",
-                      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                      color: "white",
+                      boxShadow: "0 8px 16px rgba(0, 0, 0, 0.3)",
+                      fontSize: "14px",
+                      fontWeight: "500",
                     }}
                     formatter={(value: number) => [formatCurrency(value), "Amount"]}
-                    cursor={{ fill: 'hsl(var(--primary) / 0.1)' }}
+                    cursor={{ fill: 'rgba(34, 197, 94, 0.1)' }}
+                    labelStyle={{ color: "white", fontSize: "12px" }}
                   />
                   <Bar
                     dataKey="amount"
-                    fill="hsl(var(--primary))"
+                    fill="#22C55E"
                     radius={[4, 4, 0, 0]}
                     maxBarSize={60}
                   />

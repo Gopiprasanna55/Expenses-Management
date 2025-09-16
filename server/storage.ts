@@ -441,6 +441,27 @@ export class DatabaseStorage implements IStorage {
       amount: parseFloat(result.amount || '0'),
     }));
   }
+
+  async getMonthlyExpenseTrends(months: number): Promise<{ month: string; amount: number }[]> {
+    const startDate = new Date();
+    startDate.setMonth(startDate.getMonth() - months);
+    startDate.setDate(1); // Start from first day of the month
+
+    const results = await db
+      .select({
+        month: sql<string>`TO_CHAR(${expenses.date}, 'YYYY-MM')`,
+        amount: sum(expenses.amount),
+      })
+      .from(expenses)
+      .where(gte(expenses.date, startDate))
+      .groupBy(sql`TO_CHAR(${expenses.date}, 'YYYY-MM')`)
+      .orderBy(sql`TO_CHAR(${expenses.date}, 'YYYY-MM')`);
+
+    return results.map(result => ({
+      month: result.month,
+      amount: parseFloat(result.amount || '0'),
+    }));
+  }
 }
 
 export const storage = new DatabaseStorage();

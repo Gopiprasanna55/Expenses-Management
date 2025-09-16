@@ -289,6 +289,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/analytics/expense-trends-monthly/:months", async (req, res) => {
+    try {
+      const months = parseInt(req.params.months);
+      
+      if (isNaN(months) || months < 1) {
+        return res.status(400).json({ error: "Invalid months parameter" });
+      }
+      
+      const trends = await storage.getMonthlyExpenseTrends(months);
+      res.json(trends);
+    } catch (error) {
+      console.error("Error fetching monthly expense trends:", error);
+      res.status(500).json({ error: "Failed to fetch monthly expense trends" });
+    }
+  });
+
   // Export routes
   app.get("/api/export/csv", async (req, res) => {
     try {
