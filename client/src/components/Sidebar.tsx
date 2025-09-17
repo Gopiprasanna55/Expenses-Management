@@ -71,13 +71,13 @@ export default function Sidebar({ className }: SidebarProps) {
       >
         {/* Header */}
         <div className="p-6 border-b border-border">
-          <div className="flex flex-col items-center space-y-2">
+          <div className="flex items-center space-x-3">
             <img 
               src={fdesLogo} 
               alt="FDES Logo" 
-              className="h-12 w-auto object-contain"
+              className="h-10 w-auto object-contain"
             />
-            <h1 className="text-lg font-semibold text-foreground text-center">Expense Tracker</h1>
+            <h1 className="text-lg font-semibold text-foreground">Expense Tracker</h1>
           </div>
           
           {/* User info */}
