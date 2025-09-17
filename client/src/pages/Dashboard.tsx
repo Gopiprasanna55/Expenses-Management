@@ -96,10 +96,10 @@ export default function Dashboard() {
           {/* Wallet Overview Cards */}
           <BudgetCards month={selectedMonth} year={selectedYear} />
           
-          {/* Wallet Progress and Quick Actions */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Monthly Tracking and Category Breakdown */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Budget Progress */}
-            <div className="lg:col-span-2">
+            <div>
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
