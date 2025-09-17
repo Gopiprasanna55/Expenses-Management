@@ -11,6 +11,18 @@ export const categories = pgTable("categories", {
   isActive: integer("is_active").notNull().default(1),
 });
 
+export const users = pgTable("users", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: text("email").notNull().unique(),
+  name: text("name").notNull(),
+  role: text("role").notNull().default("user"), // "admin" or "user"
+  azureObjectId: text("azure_object_id").unique(),
+  isActive: integer("is_active").notNull().default(1),
+  lastLoginAt: timestamp("last_login_at"),
+  createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
 export const expenseWallets = pgTable("expense_wallets", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
@@ -69,8 +81,22 @@ export const updateExpenseSchema = insertExpenseSchema.partial().extend({
   id: z.string(),
 });
 
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  lastLoginAt: true,
+});
+
+export const updateUserSchema = insertUserSchema.partial().extend({
+  id: z.string(),
+});
+
 export type Category = typeof categories.$inferSelect;
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
+export type User = typeof users.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type UpdateUser = z.infer<typeof updateUserSchema>;
 export type ExpenseWallet = typeof expenseWallets.$inferSelect;
 export type InsertExpenseWallet = z.infer<typeof insertExpenseWalletSchema>;
 export type UpdateExpenseWallet = z.infer<typeof updateExpenseWalletSchema>;
