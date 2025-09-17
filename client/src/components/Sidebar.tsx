@@ -2,6 +2,7 @@ import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useAuthState } from "@/hooks/useAuth";
+import fdesLogo from "@assets/image_1758110732910.png";
 import { 
   Receipt, 
   BarChart3, 
@@ -70,14 +71,13 @@ export default function Sidebar({ className }: SidebarProps) {
       >
         {/* Header */}
         <div className="p-6 border-b border-border">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-              <Receipt className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-foreground">ExpenseTracker</h1>
-              <p className="text-sm text-muted-foreground">Pro</p>
-            </div>
+          <div className="flex flex-col items-center space-y-2">
+            <img 
+              src={fdesLogo} 
+              alt="FDES Logo" 
+              className="h-12 w-auto object-contain"
+            />
+            <h1 className="text-lg font-semibold text-foreground text-center">Expense Tracker</h1>
           </div>
           
           {/* User info */}
