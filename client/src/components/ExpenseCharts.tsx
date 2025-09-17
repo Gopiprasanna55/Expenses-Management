@@ -211,7 +211,7 @@ export default function ExpenseCharts({ month, year }: ExpenseChartsProps) {
           <CardTitle>Category Breakdown</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-[280px]" data-testid="category-breakdown">
+          <div className="h-[380px]" data-testid="category-breakdown">
             {categoryLoading ? (
               <div className="flex items-center justify-center h-full">
                 <div className="flex items-center space-x-2">
@@ -221,12 +221,12 @@ export default function ExpenseCharts({ month, year }: ExpenseChartsProps) {
               </div>
             ) : categoryData && categoryData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
+                <PieChart margin={{ top: 10, right: 10, bottom: 90, left: 10 }}>
                   <Pie
                     data={formatPieData(categoryData)}
                     cx="50%"
                     cy="50%"
-                    outerRadius={130}
+                    outerRadius={120}
                     dataKey="value"
                     stroke="#fff"
                     strokeWidth={2}
@@ -241,7 +241,6 @@ export default function ExpenseCharts({ month, year }: ExpenseChartsProps) {
                     align="center"
                     wrapperStyle={{
                       fontSize: '11px',
-                      paddingTop: '30px',
                       lineHeight: '1.8'
                     }}
                     formatter={(value: string, entry: any) => (
