@@ -359,7 +359,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...expenses.map(expense => [
           new Date(expense.date).toLocaleDateString(),
           `"${expense.description.replace(/"/g, '""')}"`,
-          `"${expense.category.name.replace(/"/g, '""')}"`,
+          expense.category ? `"${expense.category.name.replace(/"/g, '""')}"` : 'Uncategorized',
           expense.vendor ? `"${expense.vendor.replace(/"/g, '""')}"` : '',
           expense.amount,
           expense.notes ? `"${expense.notes.replace(/"/g, '""')}"` : '',
