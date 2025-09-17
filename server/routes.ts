@@ -16,6 +16,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User management routes (admin only)
   app.use("/api/users", userRoutes);
   
+  // Apply authentication middleware to all API routes except auth
+  app.use("/api", authProvider.requireAuth());
+  
   // Category routes
   app.get("/api/categories", async (req, res) => {
     try {
@@ -373,7 +376,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Object storage routes for receipts
-  app.get("/objects/:objectPath(*)", async (req, res) => {
+  app.get("/objects/:objectPath(*)", authProvider.requireAuth(), async (req, res) => {
     const objectStorageService = new ObjectStorageService();
     try {
       const objectFile = await objectStorageService.getObjectEntityFile(req.path);

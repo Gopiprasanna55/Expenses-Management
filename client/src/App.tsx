@@ -3,6 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Dashboard from "@/pages/Dashboard";
 import AddExpense from "@/pages/AddExpense";
 import AllExpenses from "@/pages/AllExpenses";
@@ -15,13 +16,13 @@ import NotFound from "@/pages/not-found";
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Dashboard} />
-      <Route path="/add-expense" component={AddExpense} />
-      <Route path="/expenses" component={AllExpenses} />
-      <Route path="/categories" component={Categories} />
-      <Route path="/budget" component={ExpenseWalletSetup} />
-      <Route path="/settings" component={Settings} />
-      <Route path="/user-management" component={UserManagement} />
+      <Route path="/" component={() => <ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/add-expense" component={() => <ProtectedRoute><AddExpense /></ProtectedRoute>} />
+      <Route path="/expenses" component={() => <ProtectedRoute><AllExpenses /></ProtectedRoute>} />
+      <Route path="/categories" component={() => <ProtectedRoute><Categories /></ProtectedRoute>} />
+      <Route path="/budget" component={() => <ProtectedRoute><ExpenseWalletSetup /></ProtectedRoute>} />
+      <Route path="/settings" component={() => <ProtectedRoute><Settings /></ProtectedRoute>} />
+      <Route path="/user-management" component={() => <ProtectedRoute requireAdmin><UserManagement /></ProtectedRoute>} />
       <Route component={NotFound} />
     </Switch>
   );
