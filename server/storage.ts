@@ -1,4 +1,4 @@
-import { type Category, type InsertCategory, type ExpenseWallet, type InsertExpenseWallet, type UpdateExpenseWallet, type Expense, type InsertExpense, type UpdateExpense, type ExpenseWithCategory, type WalletSummary, type CategoryBreakdown, type ExpenseFilters, type ExpenseSortBy, type SortOrder, categories, expenseWallets, expenses } from "@shared/schema";
+import { type Category, type InsertCategory, type User, type InsertUser, type UpdateUser, type ExpenseWallet, type InsertExpenseWallet, type UpdateExpenseWallet, type Expense, type InsertExpense, type UpdateExpense, type ExpenseWithCategory, type WalletSummary, type CategoryBreakdown, type ExpenseFilters, type ExpenseSortBy, type SortOrder, categories, users, expenseWallets, expenses } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from './db';
 import { eq, sql, desc, asc, and, gte, lte, lt, like, isNotNull, count, sum } from 'drizzle-orm';
@@ -10,6 +10,16 @@ export interface IStorage {
   createCategory(category: InsertCategory): Promise<Category>;
   updateCategory(id: string, category: Partial<InsertCategory>): Promise<Category | undefined>;
   deleteCategory(id: string): Promise<boolean>;
+  
+  // User operations
+  getUsers(): Promise<User[]>;
+  getUserById(id: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByAzureObjectId(azureObjectId: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+  updateUser(id: string, user: Partial<UpdateUser>): Promise<User | undefined>;
+  updateUserLastLogin(id: string): Promise<void>;
+  deleteUser(id: string): Promise<boolean>;
   
   // Spending Limit operations
   getExpenseWallets(): Promise<ExpenseWallet[]>;
@@ -494,6 +504,91 @@ export class DatabaseStorage implements IStorage {
       month: result.month,
       amount: parseFloat(result.amount || '0'),
     }));
+  }
+
+  // User management methods
+  async getUsers(): Promise<User[]> {
+    const result = await db
+      .select()
+      .from(users)
+      .orderBy(desc(users.createdAt));
+    return result;
+  }
+
+  async getUserById(id: string): Promise<User | undefined> {
+    const result = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, id))
+      .limit(1);
+    return result[0];
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const result = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
+    return result[0];
+  }
+
+  async getUserByAzureObjectId(azureObjectId: string): Promise<User | undefined> {
+    const result = await db
+      .select()
+      .from(users)
+      .where(eq(users.azureObjectId, azureObjectId))
+      .limit(1);
+    return result[0];
+  }
+
+  async createUser(user: InsertUser): Promise<User> {
+    const newUser = {
+      ...user,
+      id: randomUUID(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const [result] = await db
+      .insert(users)
+      .values(newUser)
+      .returning();
+    
+    return result;
+  }
+
+  async updateUser(id: string, user: Partial<UpdateUser>): Promise<User | undefined> {
+    const updateData = {
+      ...user,
+      updatedAt: new Date(),
+    };
+
+    const [result] = await db
+      .update(users)
+      .set(updateData)
+      .where(eq(users.id, id))
+      .returning();
+
+    return result;
+  }
+
+  async updateUserLastLogin(id: string): Promise<void> {
+    await db
+      .update(users)
+      .set({ 
+        lastLoginAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, id));
+  }
+
+  async deleteUser(id: string): Promise<boolean> {
+    const result = await db
+      .delete(users)
+      .where(eq(users.id, id));
+
+    return (result.rowCount ?? 0) > 0;
   }
 }
 
