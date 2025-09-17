@@ -38,6 +38,26 @@ export default function Dashboard() {
     },
   });
 
+  // Fetch category breakdown for category summary
+  const { data: categoryData } = useQuery({
+    queryKey: ["/api/analytics/category-breakdown", selectedMonth, selectedYear],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      params.append('month', selectedMonth.toString());
+      params.append('year', selectedYear.toString());
+      
+      const response = await fetch(`/api/analytics/category-breakdown?${params.toString()}`, {
+        credentials: "include",
+      });
+      
+      if (!response.ok) {
+        throw new Error(`${response.status}: ${response.statusText}`);
+      }
+      
+      return response.json();
+    },
+  });
+
   const handleExportCSV = () => {
     const params = new URLSearchParams();
     window.open(`/api/export/csv?${params.toString()}`, '_blank');
@@ -134,39 +154,65 @@ export default function Dashboard() {
               </Card>
             </div>
             
-            {/* Quick Actions */}
+            {/* Category Summary */}
             <Card>
               <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Category Breakdown</CardTitle>
+                  <div className="text-sm text-muted-foreground" data-testid="text-category-count">
+                    {categoryData ? `${categoryData.length} categories this month` : "Loading..."}
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex flex-col space-y-3">
-                  <Link href="/add-expense">
-                    <Button className="w-full justify-start h-12" data-testid="button-add-expense">
-                      <Plus className="w-4 h-4 mr-3" />
-                      Add New Expense
-                    </Button>
-                  </Link>
-                  
-                  <ExcelImport />
-                  
-                  <Button 
-                    variant="secondary" 
-                    className="w-full justify-start h-12"
-                    onClick={handleExportCSV}
-                    data-testid="button-export-excel"
-                  >
-                    <Download className="w-4 h-4 mr-3" />
-                    Export to Excel
-                  </Button>
-                  
-                  <Link href="/categories">
-                    <Button variant="secondary" className="w-full justify-start h-12" data-testid="button-manage-categories">
-                      <Tags className="w-4 h-4 mr-3" />
-                      Manage Categories
-                    </Button>
-                  </Link>
-                </div>
+                {categoryData && categoryData.length > 0 ? (
+                  <>
+                    <div>
+                      <div className="flex justify-between text-sm mb-2">
+                        <span className="text-muted-foreground">Top Category</span>
+                        <span className="font-medium text-foreground" data-testid="text-top-category">
+                          {categoryData[0]?.name || "No expenses"}
+                        </span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-3">
+                        <div 
+                          className="h-3 rounded-full bg-gradient-to-r from-secondary to-primary transition-all duration-300"
+                          style={{ width: `${categoryData[0]?.percentage || 0}%` }}
+                          data-testid="progress-category-bar"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-4 pt-4">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-foreground" data-testid="text-top-amount">
+                          {formatCurrency(categoryData[0]?.totalAmount || 0)}
+                        </div>
+                        <div className="text-xs text-muted-foreground">Top Spend</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-foreground" data-testid="text-avg-category">
+                          {formatCurrency(
+                            categoryData.length > 0 
+                              ? categoryData.reduce((sum: number, cat: any) => sum + cat.totalAmount, 0) / categoryData.length 
+                              : 0
+                          )}
+                        </div>
+                        <div className="text-xs text-muted-foreground">Avg per Category</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-secondary" data-testid="text-categories-used">
+                          {categoryData.filter((cat: any) => cat.totalAmount > 0).length}
+                        </div>
+                        <div className="text-xs text-muted-foreground">Active Categories</div>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="text-muted-foreground">No category data available</div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
