@@ -226,7 +226,7 @@ export default function ExpenseCharts({ month, year }: ExpenseChartsProps) {
                     data={formatPieData(categoryData)}
                     cx="50%"
                     cy="40%"
-                    outerRadius={80}
+                    outerRadius={120}
                     dataKey="value"
                     stroke="#fff"
                     strokeWidth={2}
