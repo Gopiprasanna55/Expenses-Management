@@ -221,7 +221,7 @@ export default function ExpenseCharts({ month, year }: ExpenseChartsProps) {
               </div>
             ) : categoryData && categoryData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart margin={{ top: 10, right: 10, bottom: 90, left: 10 }}>
+                <PieChart margin={{ top: 10, right: 10, bottom: 120, left: 10 }}>
                   <Pie
                     data={formatPieData(categoryData)}
                     cx="50%"
