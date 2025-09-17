@@ -17,6 +17,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={() => <ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/dashboard" component={() => <ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/add-expense" component={() => <ProtectedRoute><AddExpense /></ProtectedRoute>} />
       <Route path="/expenses" component={() => <ProtectedRoute><AllExpenses /></ProtectedRoute>} />
       <Route path="/categories" component={() => <ProtectedRoute><Categories /></ProtectedRoute>} />
