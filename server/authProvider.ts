@@ -74,7 +74,7 @@ class AuthProvider {
 
       const azureUser = userInfo.data;
       
-      // Find or create user in database
+      // Only allow pre-approved users to sign in
       let user = await storage.getUserByAzureObjectId(azureUser.id);
       
       if (!user) {
@@ -83,21 +83,36 @@ class AuthProvider {
         user = await storage.getUserByEmail(email);
         
         if (user) {
+          // Check if user is active
+          if (!user.isActive) {
+            return res.status(403).json({ 
+              error: 'Your account is not active. Please contact the administrator.' 
+            });
+          }
+          
           // Update existing user with Azure Object ID
           user = await storage.updateUser(user.id, {
             azureObjectId: azureUser.id,
             name: azureUser.displayName, // Update name from Azure
           });
         } else {
-          // Create new user with default role
-          user = await storage.createUser({
-            email: email,
-            name: azureUser.displayName,
-            role: 'user', // Default role, first user can be manually promoted to admin
-            azureObjectId: azureUser.id,
-            isActive: 1
+          // User not found - not pre-approved
+          return res.status(403).json({ 
+            error: 'Access denied. Your email is not authorized. Please contact the administrator to request access.' 
           });
         }
+      } else {
+        // Check if user is active
+        if (!user.isActive) {
+          return res.status(403).json({ 
+            error: 'Your account is not active. Please contact the administrator.' 
+          });
+        }
+      }
+
+      // Ensure user is defined at this point
+      if (!user) {
+        return res.status(500).json({ error: 'Authentication failed' });
       }
 
       // Update last login
