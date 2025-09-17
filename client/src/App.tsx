@@ -9,6 +9,7 @@ import AllExpenses from "@/pages/AllExpenses";
 import Categories from "@/pages/Categories";
 import ExpenseWalletSetup from "@/pages/ExpenseWalletSetup";
 import Settings from "@/pages/Settings";
+import UserManagement from "@/pages/UserManagement";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -20,6 +21,7 @@ function Router() {
       <Route path="/categories" component={Categories} />
       <Route path="/budget" component={ExpenseWalletSetup} />
       <Route path="/settings" component={Settings} />
+      <Route path="/user-management" component={UserManagement} />
       <Route component={NotFound} />
     </Switch>
   );

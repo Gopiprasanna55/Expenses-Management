@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { useAuthState } from "@/hooks/useAuth";
 import { 
   Receipt, 
   BarChart3, 
@@ -11,7 +12,10 @@ import {
   Download, 
   Settings,
   Menu,
-  X
+  X,
+  Users,
+  LogOut,
+  LogIn
 } from "lucide-react";
 
 const navigation = [
@@ -29,6 +33,8 @@ interface SidebarProps {
 export default function Sidebar({ className }: SidebarProps) {
   const [location] = useLocation();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const authState = useAuthState();
+  const { isAuthenticated, user, isAdmin } = authState;
 
   return (
     <>
@@ -73,58 +79,113 @@ export default function Sidebar({ className }: SidebarProps) {
               <p className="text-sm text-muted-foreground">Pro</p>
             </div>
           </div>
+          
+          {/* User info */}
+          {isAuthenticated && user && (
+            <div className="mt-4 p-3 bg-accent/50 rounded-lg">
+              <p className="text-sm font-medium text-foreground">{user.name}</p>
+              <p className="text-xs text-muted-foreground">{user.email}</p>
+              {user.role === 'admin' && (
+                <span className="inline-block mt-1 px-2 py-1 text-xs bg-primary text-primary-foreground rounded">
+                  Admin
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Navigation */}
         <nav className="p-4 space-y-2">
-          {navigation.map((item) => {
-            const isActive = location === item.href;
-            const Icon = item.icon;
-            
-            return (
-              <Link 
-                key={item.name} 
-                href={item.href}
-                className={cn(
-                  "flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors",
-                  isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                )}
-                onClick={() => setIsMobileOpen(false)}
-                data-testid={`link-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
-              >
-                <Icon className="w-5 h-5" />
-                <span>{item.name}</span>
-              </Link>
-            );
-          })}
-          
-          <div className="pt-4 border-t border-border mt-4">
+          {!isAuthenticated ? (
             <button
-              className="flex items-center space-x-3 px-4 py-3 rounded-lg text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors w-full"
-              onClick={() => {
-                // Export CSV functionality
-                const params = new URLSearchParams();
-                window.open(`/api/export/csv?${params.toString()}`, '_blank');
-              }}
-              data-testid="button-export-data"
+              className="flex items-center space-x-3 px-4 py-3 rounded-lg font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors w-full"
+              onClick={authState.login}
+              data-testid="button-login"
             >
-              <Download className="w-5 h-5" />
-              <span>Export Data</span>
+              <LogIn className="w-5 h-5" />
+              <span>Sign In with Microsoft</span>
             </button>
-            
-            <Link href="/settings">
+          ) : (
+            <>
+              {navigation.map((item) => {
+                const isActive = location === item.href;
+                const Icon = item.icon;
+                
+                return (
+                  <Link 
+                    key={item.name} 
+                    href={item.href}
+                    className={cn(
+                      "flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors",
+                      isActive
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                    )}
+                    onClick={() => setIsMobileOpen(false)}
+                    data-testid={`link-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
+                  >
+                    <Icon className="w-5 h-5" />
+                    <span>{item.name}</span>
+                  </Link>
+                );
+              })}
+              
+              {/* Admin-only User Management */}
+              {isAdmin && (
+                <Link 
+                  href="/user-management"
+                  className={cn(
+                    "flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors",
+                    location === "/user-management"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  )}
+                  onClick={() => setIsMobileOpen(false)}
+                  data-testid="link-user-management"
+                >
+                  <Users className="w-5 h-5" />
+                  <span>User Management</span>
+                </Link>
+              )}
+            </>
+          )}
+          
+          {isAuthenticated && (
+            <div className="pt-4 border-t border-border mt-4">
               <button
                 className="flex items-center space-x-3 px-4 py-3 rounded-lg text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors w-full"
-                onClick={() => setIsMobileOpen(false)}
-                data-testid="button-settings"
+                onClick={() => {
+                  // Export CSV functionality
+                  const params = new URLSearchParams();
+                  window.open(`/api/export/csv?${params.toString()}`, '_blank');
+                }}
+                data-testid="button-export-data"
               >
-                <Settings className="w-5 h-5" />
-                <span>Settings</span>
+                <Download className="w-5 h-5" />
+                <span>Export Data</span>
               </button>
-            </Link>
-          </div>
+              
+              <Link href="/settings">
+                <button
+                  className="flex items-center space-x-3 px-4 py-3 rounded-lg text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors w-full"
+                  onClick={() => setIsMobileOpen(false)}
+                  data-testid="button-settings"
+                >
+                  <Settings className="w-5 h-5" />
+                  <span>Settings</span>
+                </button>
+              </Link>
+              
+              <button
+                className="flex items-center space-x-3 px-4 py-3 rounded-lg text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors w-full"
+                onClick={authState.logout}
+                data-testid="button-logout"
+              >
+                <LogOut className="w-5 h-5" />
+                <span>Sign Out</span>
+              </button>
+            </div>
+          )}
         </nav>
       </div>
     </>
