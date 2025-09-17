@@ -208,7 +208,7 @@ export default function ExpenseCharts({ month, year }: ExpenseChartsProps) {
       {/* Category Breakdown */}
       <Card>
         <CardHeader className="pb-4">
-          <CardTitle>Category Breakdown</CardTitle>
+          <CardTitle>Category Trends</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-[280px]" data-testid="category-breakdown">

@@ -158,7 +158,7 @@ export default function Dashboard() {
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle>Category Breakdown</CardTitle>
+                  <CardTitle>Category Trends</CardTitle>
                   <div className="text-sm text-muted-foreground" data-testid="text-category-count">
                     {categoryData ? `${categoryData.length} categories this month` : "Loading..."}
                   </div>
