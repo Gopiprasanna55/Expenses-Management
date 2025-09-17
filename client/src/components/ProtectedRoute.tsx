@@ -34,24 +34,24 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
         <Card className="max-w-md w-full shadow-lg">
           <CardContent className="pt-8 pb-8 px-8">
-            <div className="text-center space-y-6">
+            <div className="text-center space-y-4">
               {/* FDES Logo */}
               <div className="flex items-center justify-center">
                 <img 
                   src={fdesLogo} 
                   alt="FDES Logo" 
-                  className="h-16 w-auto object-contain"
+                  className="h-24 w-auto object-contain"
                 />
               </div>
               
               {/* Title and Subtitle */}
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <h2 className="text-3xl font-semibold text-gray-800">Expense Tracker</h2>
                 <p className="text-lg text-gray-600">Sign in to your account</p>
               </div>
               
               {/* Microsoft Sign In Button */}
-              <div className="pt-2">
+              <div className="pt-1">
                 <Button 
                   onClick={login} 
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 px-6 text-lg font-medium rounded-lg flex items-center justify-center space-x-3" 
@@ -70,7 +70,7 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
               </div>
               
               {/* Version */}
-              <div className="pt-4">
+              <div className="pt-2">
                 <p className="text-gray-500 text-sm font-medium">V1.0 SEPT 2025</p>
               </div>
             </div>
