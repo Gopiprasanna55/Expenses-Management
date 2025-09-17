@@ -30,24 +30,48 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
   // Show login prompt if not authenticated
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6">
-        <Card className="max-w-md w-full">
-          <CardContent className="pt-6">
-            <div className="text-center space-y-4">
-              <LogIn className="h-12 w-12 mx-auto text-primary" />
-              <div>
-                <h2 className="text-xl font-semibold">Authentication Required</h2>
-                <p className="text-muted-foreground mt-2">
-                  Please sign in with your Microsoft account to access the expense tracking system.
-                </p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-6">
+        <div className="text-center space-y-8 max-w-md w-full">
+          {/* FDES Logo */}
+          <div className="flex items-center justify-center">
+            <div className="relative">
+              <h1 className="text-6xl font-bold text-blue-800 tracking-tight">FDES</h1>
+              <div className="absolute -bottom-2 -right-8 w-24 h-6">
+                <div className="w-full h-full border-4 border-green-400 rounded-full border-l-transparent border-t-transparent transform rotate-45"></div>
               </div>
-              <Button onClick={login} className="w-full" data-testid="button-login-required">
-                <LogIn className="h-4 w-4 mr-2" />
-                Sign In with Microsoft
-              </Button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+          
+          {/* Title and Subtitle */}
+          <div className="space-y-4">
+            <h2 className="text-3xl font-semibold text-gray-800">Expense Tracker</h2>
+            <p className="text-lg text-gray-600">Sign in to your account</p>
+          </div>
+          
+          {/* Microsoft Sign In Button */}
+          <div className="space-y-6">
+            <Button 
+              onClick={login} 
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 px-6 text-lg font-medium rounded-lg flex items-center justify-center space-x-3" 
+              data-testid="button-login-required"
+            >
+              <div className="w-5 h-5 bg-white rounded-sm flex items-center justify-center">
+                <div className="grid grid-cols-2 gap-px w-3 h-3">
+                  <div className="bg-red-500 w-1.5 h-1.5"></div>
+                  <div className="bg-green-500 w-1.5 h-1.5"></div>
+                  <div className="bg-blue-500 w-1.5 h-1.5"></div>
+                  <div className="bg-yellow-500 w-1.5 h-1.5"></div>
+                </div>
+              </div>
+              <span>Sign in with Microsoft Account</span>
+            </Button>
+          </div>
+          
+          {/* Version */}
+          <div className="pt-8">
+            <p className="text-gray-500 text-sm font-medium">V1.0 SEPT 2025</p>
+          </div>
+        </div>
       </div>
     );
   }
