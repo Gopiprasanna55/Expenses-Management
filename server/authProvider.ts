@@ -5,18 +5,13 @@ import { storage } from './storage';
 import { User } from '@shared/schema';
 import axios from 'axios';
 
-declare global {
-  namespace Express {
-    interface Request {
-      session: {
-        accessToken?: string;
-        idToken?: string;
-        account?: any;
-        isAuthenticated?: boolean;
-        user?: User;
-        destroy(callback: (err?: any) => void): void;
-      } & { [key: string]: any };
-    }
+declare module 'express-session' {
+  interface SessionData {
+    accessToken?: string;
+    idToken?: string;
+    account?: any;
+    isAuthenticated?: boolean;
+    user?: User;
   }
 }
 

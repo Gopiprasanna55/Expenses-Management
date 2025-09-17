@@ -4,9 +4,18 @@ import { storage } from "./storage";
 import { insertCategorySchema, insertExpenseWalletSchema, updateExpenseWalletSchema, insertExpenseSchema, updateExpenseSchema } from "@shared/schema";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { importExpensesFromExcel } from "./excelImport";
+import { authProvider } from "./authProvider";
+import authRoutes from "./authRoutes";
+import userRoutes from "./userRoutes";
 import path from "path";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Authentication routes
+  app.use("/auth", authRoutes);
+  
+  // User management routes (admin only)
+  app.use("/api/users", userRoutes);
+  
   // Category routes
   app.get("/api/categories", async (req, res) => {
     try {
