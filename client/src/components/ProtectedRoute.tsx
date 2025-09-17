@@ -34,12 +34,11 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
         <div className="text-center space-y-8 max-w-md w-full">
           {/* FDES Logo */}
           <div className="flex items-center justify-center">
-            <div className="relative">
-              <h1 className="text-6xl font-bold text-blue-800 tracking-tight">FDES</h1>
-              <div className="absolute -bottom-2 -right-8 w-24 h-6">
-                <div className="w-full h-full border-4 border-green-400 rounded-full border-l-transparent border-t-transparent transform rotate-45"></div>
-              </div>
-            </div>
+            <img 
+              src="/attached_assets/image_1758110732910.png" 
+              alt="FDES Logo" 
+              className="h-20 w-auto object-contain"
+            />
           </div>
           
           {/* Title and Subtitle */}
