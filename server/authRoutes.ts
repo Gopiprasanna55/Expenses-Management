@@ -18,10 +18,7 @@ router.get('/signout', authProvider.logout());
 
 // Current user info route
 router.get('/me', authProvider.requireAuth(), (req, res) => {
-  res.json({
-    user: req.session.user,
-    isAuthenticated: req.session.isAuthenticated
-  });
+  res.json(req.session.user);
 });
 
 export default router;
