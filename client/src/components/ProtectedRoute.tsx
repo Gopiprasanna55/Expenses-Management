@@ -2,6 +2,7 @@ import { useAuthState } from "@/hooks/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Shield, Loader2, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import fdesLogo from "@assets/image_1758110732910.png";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -35,7 +36,7 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
           {/* FDES Logo */}
           <div className="flex items-center justify-center">
             <img 
-              src="/attached_assets/image_1758110732910.png" 
+              src={fdesLogo} 
               alt="FDES Logo" 
               className="h-20 w-auto object-contain"
             />
