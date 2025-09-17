@@ -224,9 +224,9 @@ export default function ExpenseCharts({ month, year }: ExpenseChartsProps) {
                 <PieChart>
                   <Pie
                     data={formatPieData(categoryData)}
-                    cx="45%"
-                    cy="50%"
-                    outerRadius={100}
+                    cx="50%"
+                    cy="40%"
+                    outerRadius={80}
                     dataKey="value"
                     stroke="#fff"
                     strokeWidth={2}
@@ -236,13 +236,13 @@ export default function ExpenseCharts({ month, year }: ExpenseChartsProps) {
                     ))}
                   </Pie>
                   <Legend 
-                    layout="vertical"
-                    verticalAlign="middle"
-                    align="right"
+                    layout="horizontal"
+                    verticalAlign="bottom"
+                    align="center"
                     wrapperStyle={{
                       fontSize: '11px',
-                      paddingLeft: '15px',
-                      lineHeight: '1.4'
+                      paddingTop: '20px',
+                      lineHeight: '1.8'
                     }}
                     formatter={(value: string, entry: any) => (
                       <span style={{ color: "hsl(var(--foreground))", fontSize: '11px' }}>
