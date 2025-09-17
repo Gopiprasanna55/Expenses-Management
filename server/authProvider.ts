@@ -78,18 +78,30 @@ class AuthProvider {
       let user = await storage.getUserByAzureObjectId(azureUser.id);
       
       if (!user) {
-        // Create new user with default role
-        user = await storage.createUser({
-          email: azureUser.mail || azureUser.userPrincipalName,
-          name: azureUser.displayName,
-          role: 'user', // Default role, first user can be manually promoted to admin
-          azureObjectId: azureUser.id,
-          isActive: 1
-        });
-      } else {
-        // Update last login
-        await storage.updateUserLastLogin(user.id);
+        // Try to find user by email (for existing users without Azure Object ID)
+        const email = azureUser.mail || azureUser.userPrincipalName;
+        user = await storage.getUserByEmail(email);
+        
+        if (user) {
+          // Update existing user with Azure Object ID
+          user = await storage.updateUser(user.id, {
+            azureObjectId: azureUser.id,
+            name: azureUser.displayName, // Update name from Azure
+          });
+        } else {
+          // Create new user with default role
+          user = await storage.createUser({
+            email: email,
+            name: azureUser.displayName,
+            role: 'user', // Default role, first user can be manually promoted to admin
+            azureObjectId: azureUser.id,
+            isActive: 1
+          });
+        }
       }
+
+      // Update last login
+      await storage.updateUserLastLogin(user.id);
 
       // Set session data
       req.session.accessToken = response.accessToken;
