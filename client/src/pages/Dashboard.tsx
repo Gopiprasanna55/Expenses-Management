@@ -67,12 +67,6 @@ export default function Dashboard() {
                   onMonthYearChange={handleMonthYearChange}
                 />
               </div>
-              <Button size="sm" variant="ghost" className="p-2">
-                <Bell className="w-4 h-4 text-muted-foreground" />
-              </Button>
-              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                <User className="w-4 h-4 text-primary-foreground" />
-              </div>
             </div>
           </div>
         </header>
