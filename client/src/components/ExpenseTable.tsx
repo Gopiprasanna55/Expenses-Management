@@ -10,12 +10,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { ObjectUploader } from "@/components/ObjectUploader";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { updateExpenseSchema } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Eye, Edit, Trash2, Paperclip, ChevronUp, ChevronDown, Download, X } from "lucide-react";
+import { Search, Eye, Edit, Trash2, Paperclip, ChevronUp, ChevronDown, Download, X, Upload, FileText } from "lucide-react";
+import type { UploadResult } from "@uppy/core";
 import type { ExpenseFilters, ExpenseSortBy, SortOrder, Category, UpdateExpense } from "@shared/schema";
 import { formatCurrency } from "@/lib/utils";
 
@@ -34,6 +36,10 @@ interface EditExpenseFormInlineProps {
 }
 
 function EditExpenseFormInline({ expense, categories, onSubmit, onCancel, isLoading }: EditExpenseFormInlineProps) {
+  const [uploadedReceiptUrl, setUploadedReceiptUrl] = useState<string | null>(expense?.receiptPath || null);
+  const [uploadedReceipts, setUploadedReceipts] = useState<string[]>(expense?.receiptPath ? [expense.receiptPath] : []);
+  const { toast } = useToast();
+  
   const form = useForm<Partial<UpdateExpense>>({
     resolver: zodResolver(updateExpenseSchema.partial()),
     defaultValues: {
@@ -41,10 +47,53 @@ function EditExpenseFormInline({ expense, categories, onSubmit, onCancel, isLoad
       amount: expense.amount,
       categoryId: expense.categoryId,
       vendor: expense.vendor ?? '',
-      date: new Date(expense.date).toISOString().split('T')[0],
+      date: new Date(expense.date).toISOString().split('T')[0] as any,
       notes: expense.notes ?? '',
+      receiptPath: expense.receiptPath ?? null,
     },
   });
+
+  const handleGetUploadParameters = async () => {
+    const response = await apiRequest("POST", "/api/objects/upload", {});
+    const data = await response.json();
+    return {
+      method: "PUT" as const,
+      url: data.uploadURL,
+    };
+  };
+
+  const removeReceipt = (receiptPath: string) => {
+    setUploadedReceipts(prev => prev.filter(path => path !== receiptPath));
+    if (receiptPath === form.getValues('receiptPath')) {
+      form.setValue('receiptPath', null);
+      setUploadedReceiptUrl(null);
+    }
+  };
+
+  const handleUploadComplete = (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
+    if (result.successful && result.successful.length > 0) {
+      const uploadUrl = result.successful[0].uploadURL;
+      if (uploadUrl) {
+        setUploadedReceiptUrl(uploadUrl);
+        
+        // Extract the object path from the upload URL
+        const url = new URL(uploadUrl);
+        const pathParts = url.pathname.split('/');
+        const bucketIndex = pathParts.findIndex(part => part === 'uploads');
+        if (bucketIndex !== -1) {
+          const objectId = pathParts.slice(bucketIndex + 1).join('/');
+          const receiptPath = `/objects/uploads/${objectId}`;
+          form.setValue('receiptPath', receiptPath);
+          setUploadedReceipts(prev => [...prev, receiptPath]);
+        }
+      }
+      
+      toast({
+        title: "Success",
+        description: "Receipt uploaded successfully",
+      });
+    }
+  };
 
   const handleSubmit = (data: Partial<UpdateExpense>) => {
     const submitData = {
@@ -130,7 +179,7 @@ function EditExpenseFormInline({ expense, categories, onSubmit, onCancel, isLoad
             <FormItem>
               <FormLabel>Vendor (Optional)</FormLabel>
               <FormControl>
-                <Input placeholder="Enter vendor name" {...field} />
+                <Input placeholder="Enter vendor name" {...field} value={field.value || ""} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -162,12 +211,62 @@ function EditExpenseFormInline({ expense, categories, onSubmit, onCancel, isLoad
             <FormItem>
               <FormLabel>Notes (Optional)</FormLabel>
               <FormControl>
-                <Textarea placeholder="Add any additional notes..." {...field} />
+                <Textarea placeholder="Add any additional notes..." {...field} value={field.value || ""} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
+
+        <div>
+          <Label>Receipt Upload</Label>
+          <div className="mt-2 space-y-3">
+            {/* Show uploaded receipts */}
+            {uploadedReceipts.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  {uploadedReceipts.length} receipt{uploadedReceipts.length !== 1 ? 's' : ''} uploaded
+                </p>
+                {uploadedReceipts.map((receiptPath, index) => (
+                  <div key={receiptPath} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border">
+                    <div className="flex items-center space-x-2">
+                      <FileText className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-medium">Receipt {index + 1}</span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeReceipt(receiptPath)}
+                      className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {/* Upload button */}
+            <ObjectUploader
+              maxNumberOfFiles={1}
+              maxFileSize={10485760} // 10MB
+              onGetUploadParameters={handleGetUploadParameters}
+              onComplete={handleUploadComplete}
+              buttonClassName="w-full"
+            >
+              <div className="flex items-center justify-center space-x-2 p-4 border-2 border-dashed border-border rounded-lg hover:border-primary/50 transition-colors">
+                <Upload className="w-5 h-5 text-muted-foreground" />
+                <div className="text-center">
+                  <p className="text-sm font-medium text-foreground">
+                    {uploadedReceipts.length > 0 ? "Replace receipt" : "Click to upload receipt"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">PNG, JPG, PDF up to 10MB</p>
+                </div>
+              </div>
+            </ObjectUploader>
+          </div>
+        </div>
 
         <div className="flex justify-end space-x-2">
           <Button
