@@ -29,11 +29,12 @@ type ExpenseFormData = {
 
 interface ExpenseFormProps {
   onSuccess?: () => void;
+  onCancel?: () => void;
   initialData?: Partial<ExpenseFormData>;
   expenseId?: string; // For edit mode
 }
 
-export default function ExpenseForm({ onSuccess, initialData, expenseId }: ExpenseFormProps) {
+export default function ExpenseForm({ onSuccess, onCancel, initialData, expenseId }: ExpenseFormProps) {
   const isEditMode = !!expenseId;
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -326,6 +327,7 @@ export default function ExpenseForm({ onSuccess, initialData, expenseId }: Expen
                   form.reset();
                   setUploadedReceiptUrl(null);
                   setUploadedReceipts([]);
+                  onCancel?.();
                 }}
                 data-testid="button-cancel"
               >

@@ -1,10 +1,16 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import Sidebar from "@/components/Sidebar";
 import ExpenseForm from "@/components/ExpenseForm";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 
 export default function AddExpense() {
+  const [, setLocation] = useLocation();
+
+  const handleCancel = () => {
+    setLocation('/');
+  };
+
   return (
     <div className="min-h-screen flex bg-background">
       <Sidebar />
@@ -35,9 +41,9 @@ export default function AddExpense() {
         <main className="p-6">
           <ExpenseForm 
             onSuccess={() => {
-              // Could redirect or show success message
-              window.location.href = '/';
+              setLocation('/');
             }}
+            onCancel={handleCancel}
           />
         </main>
       </div>
