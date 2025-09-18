@@ -210,8 +210,8 @@ export default function ExpenseCharts({ month, year }: ExpenseChartsProps) {
         <CardHeader className="pb-4">
           <CardTitle>Category Trends</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="h-[280px]" data-testid="category-breakdown">
+        <CardContent className="p-8">
+          <div className="h-[350px]" data-testid="category-breakdown">
             {categoryLoading ? (
               <div className="flex items-center justify-center h-full">
                 <div className="flex items-center space-x-2">
@@ -225,8 +225,8 @@ export default function ExpenseCharts({ month, year }: ExpenseChartsProps) {
                   <Pie
                     data={formatPieData(categoryData)}
                     cx="50%"
-                    cy="40%"
-                    outerRadius={80}
+                    cy="45%"
+                    outerRadius={85}
                     dataKey="value"
                     stroke="#fff"
                     strokeWidth={2}
