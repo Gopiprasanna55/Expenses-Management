@@ -92,11 +92,18 @@ export default function ExpenseCharts({ month, year }: ExpenseChartsProps) {
     const total = data.reduce((sum, item) => sum + parseFloat(item.totalAmount), 0);
     return data.map((item, index) => {
       const value = parseFloat(item.totalAmount);
+      
+      // Special color for Kitchen category
+      let fillColor = COLORS[index % COLORS.length];
+      if (item.name && item.name.toLowerCase() === 'kitchen') {
+        fillColor = "#FF6B35"; // Orange-red color for Kitchen
+      }
+      
       return {
         ...item,
         value,
         percentage: (value / total) * 100,
-        fill: COLORS[index % COLORS.length],
+        fill: fillColor,
       };
     });
   };
