@@ -93,10 +93,12 @@ export default function ExpenseCharts({ month, year }: ExpenseChartsProps) {
     return data.map((item, index) => {
       const value = parseFloat(item.totalAmount);
       
-      // Special color for Kitchen category
+      // Special colors for specific categories
       let fillColor = COLORS[index % COLORS.length];
       if (item.name && item.name.toLowerCase() === 'kitchen') {
         fillColor = "#FF6B35"; // Orange-red color for Kitchen
+      } else if (item.name && item.name.toLowerCase() === 'festivals') {
+        fillColor = "#0F5132"; // Dark green color for Festivals
       }
       
       return {
