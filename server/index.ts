@@ -89,7 +89,7 @@ app.use((req, res, next) => {
 //   app.listen(5000, "127.0.0.1", () => {
 //   console.log("Server running on http://127.0.0.1:5000");
 // });
- app.listen( port, hosit, () => {
+ app.listen( port, "0.0.0.0", () => {
     console.log(`🚀 Server is running at http://${HOST}:${PORT}`);
   });
 })();
