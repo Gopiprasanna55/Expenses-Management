@@ -4,7 +4,6 @@ import connectPgSimple from "connect-pg-simple";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import dotenv from "dotenv";
-import path from "path";
 
 // Load environment variables from .env file
 dotenv.config();
@@ -12,7 +11,6 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(express.static(path.join(__dirname, "public")));
 
 
 // Configure session middleware with PostgreSQL store
